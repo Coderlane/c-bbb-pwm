@@ -34,3 +34,6 @@ build/
 
 #VIM
 .*.sw*
+
+#YCM
+*.pyc
