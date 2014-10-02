@@ -6,15 +6,12 @@
  * @date 2014-10-01
  */
 
-#ifndef PULSER_H
-#define PULSER_H
+#ifndef PSE_PULSER_H
+#define PSE_PULSER_H
 
+#include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
-#include <assert.h>
-#include <time.h>
-#include <pthread.h>
 
 typedef int (*pulser_on_signal_t)(void *input);
 typedef int (*pulser_off_signal_t)(void *input);
@@ -22,46 +19,45 @@ typedef int (*pulser_off_signal_t)(void *input);
 /**
  * @brief 
  */
-#define PWMP_DEFAULT_HIGH_LENGTH 2.0f
+#define PSE_PWMP_DEFAULT_HIGH_LENGTH 2.0f
 
 /**
  * @brief 
  */
-#define PWMP_DEFAULT_LOW_LENGTH 1.0f
+#define PSE_PWMP_DEFAULT_LOW_LENGTH 1.0f
 
-struct pwm_pulser_t {
-	/**
-	 * @brief 
-	 */
-	float 							pwmp_high_length;
+/**
+ * @brief 
+ */
+struct pse_pwm_pulser_t;
 
-	/**
-	 * @brief 
-	 */
-	float 							pwmp_low_length;
+/**
+ * @brief 
+ */
+struct pse_ppm_pulser_t;
 
-	/**
-	 * @brief 
-	 */
-	pthread_t	 					pwmp_thread;
-	
-	/**
-	 * @brief 
-	 */
-	pulser_on_signal_t 		pwmp_on_signal;
-
-	/**
-	 * @brief 
-	 */
-	pulser_off_signal_t 	pwmp_off_signal;
+enum pse_status {
+	PSE_OK = 0
 };
 
-struct pwm_pulser_t *pwm_pulser_new(pulser_on_signal_t on, 
-		pulser_off_signal_t off);
-struct pwm_pulser_t *pwm_pulser_new_long(pulser_on_signal_t on, 
-		pulser_off_signal_t off, float low_length, float high_length);
+enum pse_pwmp_status {
+	PSE_PWMP_OK = PSE_OK,
+	PSE_PWMP_TOO_LOW = -1,
+	PSE_PWMP_TOO_HIGH = -2
+};
 
-int pwm_pulser_start(struct pwm_pulser_t *pwmp);
-int pwm_pulser_stop(struct pwm_pulser_t *pwmp);
+struct pse_pwm_pulser_t *pse_pwm_pulser_new(
+		pulser_on_signal_t on, void *on_arg, 
+		pulser_off_signal_t off, void *off_arg);
+
+struct pse_pwm_pulser_t *pse_pwm_pulser_new_long(
+		pulser_on_signal_t on, void *on_arg, 
+		pulser_off_signal_t off, void *off_arg,
+		float low_length, float high_length);
+
+int pse_pwm_pulser_start(struct pse_pwm_pulser_t *pwmp);
+int pse_pwm_pulser_stop(struct pse_pwm_pulser_t *pwmp);
+//int pse_pwm_pulser_set_percent(struct pse_pwm_pulser_t *pwmp, float percent);
+int pse_pwm_pulser_set_length(struct pse_pwm_pulser_t *pwmp, float length);
 
 #endif /* PULSER_H */
