@@ -142,23 +142,45 @@ struct pse_pwm_pulser_t *
 pse_pwm_pulser_new_long(pulser_on_signal_t on, void *on_arg,
 		pulser_off_signal_t off, void *off_arg,
 		float low_length, float high_length) {
-	struct pse_pwm_pulser_t *pulser = NULL;
+	struct pse_pwm_pulser_t *pwmp = NULL;
 
-	pulser = malloc(sizeof(struct pse_pwm_pulser_t));
-	assert(pulser != NULL);
+	pwmp = malloc(sizeof(struct pse_pwm_pulser_t));
+	assert(pwmp != NULL);
 
-	pulser->pwmp_pulser = pse_pulser_new(pse_pwm_pulser_loop, pulser);
-	assert(pulser->pwmp_pulser != NULL);
+	pwmp->pwmp_pulser = pse_pulser_new(pse_pwm_pulser_loop, pwmp);
+	assert(pwmp->pwmp_pulser != NULL);
 
-	pulser->pwmp_on_signal = on;
-	pulser->pwmp_on_arg = on_arg;
-	pulser->pwmp_off_signal = off;
-	pulser->pwmp_off_arg = off_arg;
+	pwmp->pwmp_on_signal = on;
+	pwmp->pwmp_on_arg = on_arg;
+	pwmp->pwmp_off_signal = off;
+	pwmp->pwmp_off_arg = off_arg;
 
-	pulser->pwmp_low_length = msec_to_usec(low_length);
-	pulser->pwmp_high_length = msec_to_usec(high_length);
+	pwmp->pwmp_low_length = msec_to_usec(low_length);
+	pwmp->pwmp_high_length = msec_to_usec(high_length);
 
-	return pulser;
+	pthread_mutex_init(&(pwmp->pwmp_update_timing_mutex), NULL);
+
+	pse_pwm_pulser_default_dynamic_lengths(pwmp);
+
+	return pwmp;
+}
+
+/**
+ * @brief 
+ *
+ * @param pwmp
+ */
+void 
+pse_pwm_pulser_default_dynamic_lengths(struct pse_pwm_pulser_t *pwmp) {
+	assert(pwmp != NULL);
+
+	pthread_mutex_lock(&(pwmp->pwmp_update_timing_mutex));
+	// Set the default lengths.
+	pwmp->pwmp_new_signal_length = pwmp->pwmp_low_length;
+	pwmp->pwmp_new_cycle_length = PSE_PWMP_DEFAULT_CYCLE_LENGTH;	
+	pwmp->pwmp_update_timing = true;
+
+	pthread_mutex_unlock(&(pwmp->pwmp_update_timing_mutex));
 }
 
 /**
@@ -170,6 +192,9 @@ pse_pwm_pulser_new_long(pulser_on_signal_t on, void *on_arg,
  */
 int 
 pse_pwm_pulser_start(struct pse_pwm_pulser_t *pwmp) {
+	// Reset the default.
+	pse_pwm_pulser_default_dynamic_lengths(pwmp);
+	// Start the loop.
 	pse_pulser_start(pwmp->pwmp_pulser);
 	return 0;
 }
@@ -187,21 +212,27 @@ pse_pwm_pulser_stop(struct pse_pwm_pulser_t *pwmp) {
 	return 0;
 }
 
+/**
+ * @brief 
+ *
+ * @param pwmp_void The pse_pwmp_pulser_t * that is being run.
+ */
 void pse_pwm_pulser_loop(void *pwmp_void) {
 	struct pse_pwm_pulser_t *pwmp = pwmp_void;
 	assert(pwmp);
 
-
 	// CHANGE TO SIMPLE BOOL FOR BOTH CASES
 	// THEN ADD MUTEX INTERNALLY TO PREVENT DOUBLE WRITE
-	if(pwmp->pwmp_signal_length != pwmp->pwmp_new_signal_length) {
+	if(pwmp->pwmp_update_timing) {
+		pthread_mutex_lock(&(pwmp->pwmp_update_timing_mutex));
 		// Assign new value
 		pwmp->pwmp_signal_length = pwmp->pwmp_new_signal_length;
-		// Update old value
-		pwmp->pwmp_new_signal_length = pwmp->pwmp_signal_length;
+		pwmp->pwmp_cycle_length = pwmp->pwmp_new_cycle_length;
 		// Determine delay
 		pwmp->pwmp_delay_length =
 		 	pwmp->pwmp_cycle_length - pwmp->pwmp_signal_length;
+		
+		pthread_mutex_unlock(&(pwmp->pwmp_update_timing_mutex));
 	}
 
 	// Turn on signal
@@ -215,24 +246,63 @@ void pse_pwm_pulser_loop(void *pwmp_void) {
 	usleep(pwmp->pwmp_delay_length);
 }
 
-//int pse_pwm_pulser_set_percent(struct pse_pwm_pulser_t *pwmp, float percent);
-
+/**
+ * @brief Set the signal length. 
+ * Set the duration of the PWM HIGH signal.
+ *
+ * @param pwmp The pse_pwm_pulser_t to set the signal length of.
+ * @param length THe length of the signal in milliseconds.
+ *
+ * @return A status code.
+ */
 int
-pse_pwm_pulser_set_length(struct pse_pwm_pulser_t *pwmp, float length) {
+pse_pwm_pulser_set_signal_length(struct pse_pwm_pulser_t *pwmp, float length) {
+	uint16_t usec_length = 0;
 	assert(pwmp != NULL);
-
-	if(length < pwmp->pwmp_low_length) {
+	// calculate usec length.
+	usec_length = msec_to_usec(length);
+	// Check low
+	if(usec_length < pwmp->pwmp_low_length) {
 		return PSE_PWMP_TOO_LOW;
 	}
-
-	if(length > pwmp->pwmp_high_length) {
+	// Check high
+	if(usec_length > pwmp->pwmp_high_length) {
 		return PSE_PWMP_TOO_HIGH;
 	}
-	
-	pwmp->pwmp_new_signal_length = msec_to_usec(length);
-	
+	// Lock the update mutex
+	pthread_mutex_lock(&(pwmp->pwmp_update_timing_mutex));
+	//
+	pwmp->pwmp_new_signal_length = usec_length;
+	pwmp->pwmp_update_timing = true;
+	//
+	pthread_mutex_unlock(&(pwmp->pwmp_update_timing_mutex));
 	return 0;
 }
+
+/**
+ * @brief 
+ *
+ * @param pwmp
+ * @param length
+ *
+ * @return 
+ */
+int 
+pse_pwm_pulser_set_cycle_length(struct pse_pwm_pulser_t *pwmp, float length) {
+	uint16_t usec_length = 0;
+	assert(pwmp != NULL);
+	// calculate usec length.
+	usec_length = msec_to_usec(length);
+	// Lock the update mutex
+	pthread_mutex_lock(&(pwmp->pwmp_update_timing_mutex));
+	//
+	pwmp->pwmp_new_cycle_length = usec_length;
+	pwmp->pwmp_update_timing = true;
+	//
+	pthread_mutex_unlock(&(pwmp->pwmp_update_timing_mutex));
+	return 0;
+}
+
 
 
 

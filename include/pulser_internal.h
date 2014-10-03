@@ -69,7 +69,10 @@ struct pse_pwm_pulser_t {
 	 */
 	uint16_t							pwmp_signal_length;
 
-	atomic_uint						pwmp_new_signal_length;
+	/**
+	 * @brief 
+	 */
+	uint16_t							pwmp_new_signal_length;
 
 	/**
 	 * @brief This is the remaining time to delay until emitting the next set.
@@ -85,7 +88,17 @@ struct pse_pwm_pulser_t {
 	/**
 	 * @brief 
 	 */
-	pthread_mutex_t				pwmp_length_mutex;
+	uint16_t		 					pwmp_new_cycle_length;
+
+	/**
+	 * @brief 
+	 */
+	atomic_bool						pwmp_update_timing;
+
+	/**
+	 * @brief 
+	 */
+	pthread_mutex_t 			pwmp_update_timing_mutex;
 
 	/**
 	 * @brief 
@@ -154,6 +167,7 @@ struct pse_ppm_pulser_t {
 	struct pse_pulser_t  *ppmp_pulser;
 };
 
+// PULSER
 struct pse_pulser_t *pse_pulser_new(pulser_loop loop, void *loop_arg);
 void pse_pulser_delete(struct pse_pulser_t **pp_ptr);
 
@@ -162,8 +176,11 @@ int pse_pulser_stop(struct pse_pulser_t *pp);
 
 void *pse_pulser_run(void *pp_void);
 
+// PWM_PULSER
 void pse_pwm_pulser_loop(void *pwmp);
+void pse_pwm_pulser_default_dynamic_lengths(struct pse_pwm_pulser_t *pwmp);
 
+// GENERIC
 uint16_t msec_to_usec(float msec);
 
 #endif /* PSE_PULSER_INTERNAL_H */
