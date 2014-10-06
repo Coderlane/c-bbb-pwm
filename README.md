@@ -1,4 +1,2 @@
-c-pulse-signal-emitter
+c-tunable-pwm
 ======================
-
-A library for outputting pwm and ppm signals.
