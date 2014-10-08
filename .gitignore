@@ -28,7 +28,6 @@
 *.x86_64
 *.hex
 
-
 #Project Specific
 build/
 
