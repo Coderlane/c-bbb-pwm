@@ -1,2 +1,2 @@
-c-tunable-pwm
+c-bbb-pwm
 ======================

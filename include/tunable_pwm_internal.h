@@ -13,6 +13,13 @@
 #include <tunable_pwm.h>
 #include <stdint.h>
 
+struct tpwm_library_t {
+	
+
+
+};
+
+
 /**
  * @brief Settings for a tunable pwm controller.
  */
