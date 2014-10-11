@@ -8,4 +8,20 @@
 
 #include <bbb_pwm.h>
 
+#include <stdlib.h>
+#include <assert.h>
 
+/**
+ * @brief 
+ */
+struct bbb_pwm_controller_t {
+	/**
+	 * @brief 
+	 */
+	char 				*bpc_cape_path;
+
+	/**
+	 * @brief 
+	 */
+	char 				*bpc_ocp_path;
+};

@@ -43,6 +43,8 @@ flags = [
 'c',
 '-I',
 './include',
+'-I',
+'/home/travis/programming/longboard/c-bbb-pwm/include',
 '-isystem',
 '/usr/include',
 '-isystem',
