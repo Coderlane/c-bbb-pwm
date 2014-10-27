@@ -9,12 +9,37 @@
 #include <bbb_pwm_internal.h>
 
 /**
+ * @brief 
+ *
+ * @return 
+ */
+enum bbb_pwm_status_e 
+bbb_pwm_setup() 
+{
+
+	return BPS_NOT_IMPLEMENTED;
+}
+
+/**
+ * @brief 
+ *
+ * @return 
+ */
+enum bbb_pwm_status_e 
+bbb_pwm_cleanup()
+{
+
+	return BPS_NOT_IMPLEMENTED;
+}
+
+/**
  * @brief Create a new controller.
  *
  * @return A new controller, or NULL on failure.
  */
-struct bbb_pwm_controller_t* bbb_pwm_controller_new() {
-
+struct bbb_pwm_controller_t* 
+bbb_pwm_controller_new()
+{
 	// NOT IMPLEMNTED.
 	return NULL;
 }
@@ -24,7 +49,9 @@ struct bbb_pwm_controller_t* bbb_pwm_controller_new() {
  *
  * @param bpc_ptr The controller to free.
  */
-void bbb_pwm_controller_delete(struct bbb_pwm_controller_t **bpc_ptr) {
+void 
+bbb_pwm_controller_delete(struct bbb_pwm_controller_t **bpc_ptr) 
+{
 	struct bbb_pwm_controller_t *bpc;
 	// Check the ptr.
 	if(bpc_ptr == NULL) {

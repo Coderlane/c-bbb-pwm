@@ -8,14 +8,13 @@
 
 
 enum bbb_pwm_status_e {
-	BPL_STATUS_NOT_IMPLEMENTED = -500,
-	BPL_STATUS_ERROR = -2,
-	BPL_STATUS_OK = 0
+	BPS_NOT_IMPLEMENTED = -500,
+	BPS_ERROR = -2,
+	BPS_OK = 0
 };
 
 struct bbb_pwm_t;
 struct bbb_pwm_tuning_t;
-struct bbb_pwm_controller_t;
 
-struct bbb_pwm_controller_t* bbb_pwm_controller_new();
-void bbb_pwm_controller_delete(struct bbb_pwm_controller_t **bpc_ptr);
+enum bbb_pwm_status_e bbb_pwm_setup();
+enum bbb_pwm_status_e bbb_pwm_cleanup();
