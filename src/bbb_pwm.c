@@ -13,11 +13,11 @@
  *
  * @return 
  */
-enum bbb_pwm_status_e 
+enum bbb_pwm_return_code_e 
 bbb_pwm_setup() 
 {
 
-	return BPS_NOT_IMPLEMENTED;
+	return BPRC_NOT_IMPLEMENTED;
 }
 
 /**
@@ -25,55 +25,65 @@ bbb_pwm_setup()
  *
  * @return 
  */
-enum bbb_pwm_status_e 
+enum bbb_pwm_return_code_e 
 bbb_pwm_cleanup()
 {
 
-	return BPS_NOT_IMPLEMENTED;
+	return BPRC_NOT_IMPLEMENTED;
 }
 
 /**
- * @brief Create a new controller.
+ * @brief Create a new library.
  *
- * @return A new controller, or NULL on failure.
+ * @return A new library, or NULL on failure.
  */
-struct bbb_pwm_controller_t* 
-bbb_pwm_controller_new()
+struct bbb_pwm_library_t* 
+bbb_pwm_library_new()
 {
+	struct bbb_pwm_library_t* bpl_ptr = NULL;
+	bpl_ptr = malloc(sizeof(struct bbb_pwm_library_t));
+	assert(bpl_ptr != NULL);
+
+	bpl_ptr->bpl_cape_path = NULL;
+	bpl_ptr->bpl_ocp_path = NULL;
 	// NOT IMPLEMNTED.
-	return NULL;
+	for(uint8_t id; id < BPC_NUM_PWMS; id++) {
+
+	}
+	
+	return bpl_ptr;
 }
 
 /**
- * @brief Free a controller.
+ * @brief Free a library.
  *
- * @param bpc_ptr The controller to free.
+ * @param bpl_ptr The library to free.
  */
 void 
-bbb_pwm_controller_delete(struct bbb_pwm_controller_t **bpc_ptr) 
+bbb_pwm_library_delete(struct bbb_pwm_library_t **bpl_ptr) 
 {
-	struct bbb_pwm_controller_t *bpc;
+	struct bbb_pwm_library_t *bpl;
 	// Check the ptr.
-	if(bpc_ptr == NULL) {
+	if(bpl_ptr == NULL) {
 		return;
 	}
 	// Check the referenced ptr.
-	bpc = (*bpc_ptr);
-	if(bpc == NULL) {
+	bpl = (*bpl_ptr);
+	if(bpl == NULL) {
 		return;
 	}
 	// Free associated memory.
-	if(bpc->bpc_cape_path != NULL) {
-		free(bpc->bpc_cape_path);
-		bpc->bpc_cape_path = NULL;
+	if(bpl->bpl_cape_path != NULL) {
+		free(bpl->bpl_cape_path);
+		bpl->bpl_cape_path = NULL;
 	}	
 
-	if(bpc->bpc_ocp_path != NULL) {
-		free(bpc->bpc_ocp_path);
-		bpc->bpc_ocp_path = NULL;
+	if(bpl->bpl_ocp_path != NULL) {
+		free(bpl->bpl_ocp_path);
+		bpl->bpl_ocp_path = NULL;
 	}
 
-	// Free the origional bpc
-	free(bpc);
-	(*bpc_ptr) = NULL;
+	// Free the origional bpl
+	free(bpl);
+	(*bpl_ptr) = NULL;
 }

@@ -20,24 +20,25 @@
 
 struct bbb_pwm_t {
 	uint8_t				bp_id;
+	
 };
 
 /**
  * @brief 
  */
-struct bbb_pwm_controller_t {
+struct bbb_pwm_library_t {
 	/**
 	 * @brief 
 	 */
-	char 				*bpc_cape_path;
+	char 				*bpl_cape_path;
 
 	/**
 	 * @brief 
 	 */
-	char 				*bpc_ocp_path;
+	char 				*bpl_ocp_path;
 
-	struct bbb_pwm_t 		bpc_pwms[BPC_NUM_PWMS];
+	struct bbb_pwm_t 		bpl_pwms[BPC_NUM_PWMS];
 };
 
-struct bbb_pwm_controller_t* bbb_pwm_controller_new();
-void bbb_pwm_controller_delete(struct bbb_pwm_controller_t **bpc_ptr);
+struct bbb_pwm_library_t* bbb_pwm_library_new();
+void bbb_pwm_library_delete(struct bbb_pwm_library_t **bpl_ptr);
