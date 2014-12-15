@@ -41,4 +41,6 @@ struct bbb_pwm_library_t {
 };
 
 struct bbb_pwm_library_t* bbb_pwm_library_new();
+
+int bbb_pwm_library_init(struct bbb_pwm_library_t *bpl);
 void bbb_pwm_library_delete(struct bbb_pwm_library_t **bpl_ptr);

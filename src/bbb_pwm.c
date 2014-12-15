@@ -13,7 +13,7 @@
  *
  * @return 
  */
-enum bbb_pwm_return_code_e 
+int
 bbb_pwm_setup() 
 {
 
@@ -25,7 +25,7 @@ bbb_pwm_setup()
  *
  * @return 
  */
-enum bbb_pwm_return_code_e 
+int
 bbb_pwm_cleanup()
 {
 
@@ -41,16 +41,8 @@ struct bbb_pwm_library_t*
 bbb_pwm_library_new()
 {
 	struct bbb_pwm_library_t* bpl_ptr = NULL;
-	bpl_ptr = malloc(sizeof(struct bbb_pwm_library_t));
+	bpl_ptr = calloc(sizeof(struct bbb_pwm_library_t), 1);
 	assert(bpl_ptr != NULL);
-
-	bpl_ptr->bpl_cape_path = NULL;
-	bpl_ptr->bpl_ocp_path = NULL;
-	// NOT IMPLEMNTED.
-	for(uint8_t id; id < BPC_NUM_PWMS; id++) {
-
-	}
-	
 	return bpl_ptr;
 }
 
@@ -87,3 +79,11 @@ bbb_pwm_library_delete(struct bbb_pwm_library_t **bpl_ptr)
 	free(bpl);
 	(*bpl_ptr) = NULL;
 }
+
+int
+bbb_pwm_library_init(struct bbb_pwm_library_t *bpl) 
+{
+
+	return BPRC_NOT_IMPLEMENTED;
+}
+

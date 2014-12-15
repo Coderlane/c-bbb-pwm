@@ -20,5 +20,5 @@ enum bbb_pwm_return_code_e {
 struct bbb_pwm_t;
 struct bbb_pwm_tuning_t;
 
-enum bbb_pwm_return_code_e bbb_pwm_setup();
-enum bbb_pwm_return_code_e bbb_pwm_cleanup();
+int bbb_pwm_setup();
+int bbb_pwm_cleanup();
