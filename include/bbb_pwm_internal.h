@@ -8,6 +8,8 @@
 
 #include <bbb_pwm.h>
 
+#include <libudev.h>
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -30,14 +32,16 @@ struct bbb_pwm_library_t {
 	/**
 	 * @brief 
 	 */
-	char 				*bpl_cape_path;
+	char 							 *bpl_cape_path;
 
 	/**
 	 * @brief 
 	 */
-	char 				*bpl_ocp_path;
+	char 							 *bpl_ocp_path;
 
 	struct bbb_pwm_t 		bpl_pwms[BPC_NUM_PWMS];
+
+	struct udev 			 *bpl_udev;
 };
 
 struct bbb_pwm_library_t* bbb_pwm_library_new();

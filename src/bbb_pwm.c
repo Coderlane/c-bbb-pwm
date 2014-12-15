@@ -43,6 +43,9 @@ bbb_pwm_library_new()
 	struct bbb_pwm_library_t* bpl_ptr = NULL;
 	bpl_ptr = calloc(sizeof(struct bbb_pwm_library_t), 1);
 	assert(bpl_ptr != NULL);
+	
+	// Should we just init here?
+	
 	return bpl_ptr;
 }
 
@@ -80,9 +83,24 @@ bbb_pwm_library_delete(struct bbb_pwm_library_t **bpl_ptr)
 	(*bpl_ptr) = NULL;
 }
 
+/**
+ * @brief Initializes a library object.
+ * Initializes udef for the library.
+ * Finds the cape and ocp paths.
+ * Sets up the pwms.
+ *
+ * @param bpl The library to initialize.
+ *
+ * @return A status code.
+ */
 int
 bbb_pwm_library_init(struct bbb_pwm_library_t *bpl) 
 {
+	
+	if(bpl->bpl_udev == NULL) {
+		bpl->bpl_udev = udev_new();
+		assert(bpl->bpl_udev != NULL);
+	}
 
 	return BPRC_NOT_IMPLEMENTED;
 }
