@@ -57,17 +57,38 @@ bbb_pwm_controller_delete(struct bbb_pwm_controller_t **bpc_ptr)
 	(*bpc_ptr) = NULL;
 }
 
+/**
+ * @brief Initializes a bbb pwm controller.
+ *
+ * @param bpc The bbb pwm controller to initialize.
+ *
+ * @return A status code.
+ */
 int
 bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc)
 {
 	int result = BPRC_OK;
 	char *capemgr_path = NULL;
+	char *capemgr_slots_path = NULL;
 	
 	capemgr_path = find_device_syspath(bpc->bpc_udev, "driver", "bone-capemgr");
+	if(capemgr_path == NULL) {
+		result = BPRC_NO_CAPEMGR;
+		goto out;
+	}
+	
+	capemgr_slots_path = push_path(capemgr_path, "slots");
+	if(capemgr_slots_path == NULL) {
+		result = BPRC_NO_MEM;
+		goto out;
+	}
 
 out:
 	if(capemgr_path != NULL) {
 		free(capemgr_path);
+	}
+	if(capemgr_slots_path != NULL) {
+		free(capemgr_slots_path);
 	}
 	return result;
 }
@@ -129,5 +150,26 @@ find_device_syspath(struct udev *probe_udev, char *sysattr, char *value)
 
 out:
 	udev_enumerate_unref(enumer);
+	return result;
+}
+
+/**
+ * @brief Push other onto base.
+ * Assumes base doesn't have a trailing /
+ * Assumes other doesn't have a leading /
+ *
+ * @param base The base to push other onto.
+ * @param other The other part of the path to push onto base.
+ *
+ * @return The resultant path if successful, else NULL
+ */
+char *push_path(char *base, char *other)
+{
+	char *result = NULL;
+	
+	if(asprintf(&result, "%s/%s", base, other) < 0) {
+		return NULL;
+	}
+
 	return result;
 }

@@ -6,6 +6,10 @@
  * @date 2014-10-10
  */
 
+
+#ifndef BBB_PWM_INTERNAL_H
+#define BBB_PWM_INTERNAL_H
+
 #include <bbb_pwm.h>
 
 #include <libudev.h>
@@ -47,4 +51,6 @@ struct bbb_pwm_controller_t {
 
 int bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc);
 char *find_device_syspath(struct udev *probe_udev, char *sysattr, char *value);
+char *push_path(char *base, char *other);
 
+#endif
