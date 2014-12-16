@@ -10,9 +10,8 @@
 #ifndef BBB_PWM_INTERNAL_H
 #define BBB_PWM_INTERNAL_H
 
-#define _GNU_SOURCE
-
 #include <bbb_pwm.h>
+#include <bbb_capemgr.h>
 
 #include <libudev.h>
 
@@ -39,21 +38,16 @@ struct bbb_pwm_controller_t {
 	/**
 	 * @brief The number of pwms detected.
 	 */
-	int 								bpc_num_pwms;
+	int 										bpc_num_pwms;
 
 	/**
 	 * @brief The individual pwms.
 	 */
-	struct bbb_pwm_t 	 *bpc_pwms;
+	struct bbb_pwm_t 	 		 *bpc_pwms;
 
-	/**
-	 * @brief The udev reference.
-	 */
-	struct udev 			 *bpc_udev;
+	struct bbb_capemgr_t 	 *bpc_capemgr;
 };
 
 int bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc);
-char *find_device_syspath(struct udev *probe_udev, char *sysattr, char *value);
-char *push_path(char *base, char *other);
 
 #endif

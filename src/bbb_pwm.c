@@ -21,9 +21,6 @@ bbb_pwm_controller_new()
 	bpc = calloc(sizeof(struct bbb_pwm_controller_t), 1);
 	assert(bpc != NULL);
 	
-	bpc->bpc_udev = udev_new();
-	assert(bpc->bpc_udev != NULL);
-
 	if(bbb_pwm_controller_init(bpc) != BPRC_OK) {
 		bbb_pwm_controller_delete(&bpc);
 	}
@@ -65,32 +62,17 @@ bbb_pwm_controller_delete(struct bbb_pwm_controller_t **bpc_ptr)
 int
 bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc)
 {
-	int result = BPRC_OK;
-	char *capemgr_path = NULL;
-	char *capemgr_slots_path = NULL;
+	bpc->bpc_capemgr = bbb_capemgr_new();
+	if(bpc->bpc_capemgr == NULL) {
+		return BPRC_NO_CAPEMGR;
+	}	
 	
-	capemgr_path = find_device_syspath(bpc->bpc_udev, "driver", "bone-capemgr");
-	if(capemgr_path == NULL) {
-		result = BPRC_NO_CAPEMGR;
-		goto out;
-	}
-	
-	capemgr_slots_path = push_path(capemgr_path, "slots");
-	if(capemgr_slots_path == NULL) {
-		result = BPRC_NO_MEM;
-		goto out;
+	if(bbb_capemgr_enable(bpc->bpc_capemgr, "am33xx_pwm") < 0) {
+		return BPRC_NO_PWM;
 	}
 
-out:
-	if(capemgr_path != NULL) {
-		free(capemgr_path);
-	}
-	if(capemgr_slots_path != NULL) {
-		free(capemgr_slots_path);
-	}
-	return result;
+	return BPRC_OK;
 }
-
 
 /**
  * @brief Gets a pointer to a specific pwm unit.
@@ -108,71 +90,4 @@ bbb_pwm_controller_get(struct bbb_pwm_controller_t* bpc, int pwm_id)
 		return NULL;
 	}
 	return &(bpc->bpc_pwms[pwm_id]);
-}
-
-
-/**
- * @brief Returns the syspath foudn for a specific device 
- * based on the sysattr searched for and the value specified.
- *
- * @param probe_udev The udev library to probe.
- * @param sysattr The sysattr to search for.
- * @param value The sysattr value to search for.
- *
- * @return An allocated copy of the syspath, be sure to free it on success.
- * On failure to find, or error NULL.
- */
-char *
-find_device_syspath(struct udev *probe_udev, char *sysattr, char *value) 
-{
-	char *result = NULL;
-	struct udev_enumerate *enumer = NULL;
-	struct udev_list_entry *devs = NULL; 
-	struct udev_list_entry *dev_entry = NULL; 
-
-
-	// Set up the enumeration
-	enumer = udev_enumerate_new(probe_udev);
-	assert(enumer != NULL);
-
-	// Look for the input values
-	udev_enumerate_add_match_sysattr(enumer, sysattr, value);
-
-	// Scan and get the list of items found.
-	udev_enumerate_scan_devices(enumer);
-	devs = udev_enumerate_get_list_entry(enumer);
-	if(devs == NULL) {
-		goto out;
-	}
-
-	udev_list_entry_foreach(dev_entry, devs) {
-		result = strdup(udev_list_entry_get_name(dev_entry));
-		// Just grab the first one.
-		goto out;
-	}
-
-out:
-	udev_enumerate_unref(enumer);
-	return result;
-}
-
-/**
- * @brief Push other onto base.
- * Assumes base doesn't have a trailing /
- * Assumes other doesn't have a leading /
- *
- * @param base The base to push other onto.
- * @param other The other part of the path to push onto base.
- *
- * @return The resultant path if successful, else NULL
- */
-char *push_path(char *base, char *other)
-{
-	char *result = NULL;
-	
-	if(asprintf(&result, "%s/%s", base, other) < 0) {
-		return NULL;
-	}
-
-	return result;
 }
