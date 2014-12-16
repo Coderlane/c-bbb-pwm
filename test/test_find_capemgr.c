@@ -16,6 +16,8 @@ int main() {
 	capemgr_path = find_device_syspath(probe_udev, "driver", "bone-capemgr");
 	assert(capemgr_path != NULL);
 
+	printf("capemgr path: %s\n", capemgr_path);
+	free(capemgr_path);
 	return 0;
 }
 
