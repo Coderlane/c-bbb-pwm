@@ -17,6 +17,7 @@ set(BBB_PWM_LIBRARY "bbbpwm")
 set(BBB_PWM_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 set(BBB_PWM_SRC "${PROJECT_SOURCE_DIR}/src")
 set(BBB_PWM_TEST "${PROJECT_SOURCE_DIR}/test")
+set(BBB_PWM_UTIL "${PROJECT_SOURCE_DIR}/util")
 
 # Uncomment to make makefiles verbose
 # set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -38,3 +39,5 @@ target_link_libraries(${BBB_PWM_LIBRARY} ${udev_LIBRARY})
 # Tests
 add_subdirectory(${BBB_PWM_TEST})
 
+# Utilities
+add_subdirectory(${BBB_PWM_UTIL})
