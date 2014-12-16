@@ -10,10 +10,13 @@
 #ifndef BBB_PWM_INTERNAL_H
 #define BBB_PWM_INTERNAL_H
 
+#define _GNU_SOURCE
+
 #include <bbb_pwm.h>
 
 #include <libudev.h>
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <assert.h>

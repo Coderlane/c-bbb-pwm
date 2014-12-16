@@ -17,9 +17,7 @@ struct bbb_pwm_controller_t*
 bbb_pwm_controller_new()
 {
 	struct bbb_pwm_controller_t* bpc = NULL;
-
-
-
+	
 	bpc = calloc(sizeof(struct bbb_pwm_controller_t), 1);
 	assert(bpc != NULL);
 	
@@ -112,12 +110,17 @@ bbb_pwm_controller_get(struct bbb_pwm_controller_t* bpc, int pwm_id)
 	return &(bpc->bpc_pwms[pwm_id]);
 }
 
+
 /**
- * @brief 
+ * @brief Returns the syspath foudn for a specific device 
+ * based on the sysattr searched for and the value specified.
  *
- * @param bpc
+ * @param probe_udev The udev library to probe.
+ * @param sysattr The sysattr to search for.
+ * @param value The sysattr value to search for.
  *
- * @return 
+ * @return An allocated copy of the syspath, be sure to free it on success.
+ * On failure to find, or error NULL.
  */
 char *
 find_device_syspath(struct udev *probe_udev, char *sysattr, char *value) 
