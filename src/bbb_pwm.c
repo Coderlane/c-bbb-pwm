@@ -16,29 +16,20 @@
 struct bbb_pwm_controller_t* 
 bbb_pwm_controller_new()
 {
-	char *cape_path = NULL;
-	char *ocp_path = NULL;
-	struct udev *new_udev = NULL;
 	struct bbb_pwm_controller_t* bpc = NULL;
 
-	new_udev = udev_new();
-	if(new_udev == NULL) {
-		goto out;
-	}
-	
-	cape_path = find_device_syspath(new_udev, "driver", "bone-capemgr");
-	if(cape_path == NULL) {
-		goto out;
-	}
+
 
 	bpc = calloc(sizeof(struct bbb_pwm_controller_t), 1);
 	assert(bpc != NULL);
 	
-	bpc->bpc_udev = new_udev;
-	bpc->bpc_cape_path = cape_path;
-	bpc->bpc_ocp_path = ocp_path;
+	bpc->bpc_udev = udev_new();
+	assert(bpc->bpc_udev != NULL);
 
-out:
+	if(bbb_pwm_controller_init(bpc) != BPRC_OK) {
+		bbb_pwm_controller_delete(&bpc);
+	}
+	
 	return bpc;
 }
 
@@ -60,22 +51,45 @@ bbb_pwm_controller_delete(struct bbb_pwm_controller_t **bpc_ptr)
 	if(bpc == NULL) {
 		return;
 	}
-	// Free associated memory.
-	if(bpc->bpc_cape_path != NULL) {
-		free(bpc->bpc_cape_path);
-		bpc->bpc_cape_path = NULL;
-	}	
-
-	if(bpc->bpc_ocp_path != NULL) {
-		free(bpc->bpc_ocp_path);
-		bpc->bpc_ocp_path = NULL;
-	}
 
 	// Free the origional bpc
 	free(bpc);
 	(*bpc_ptr) = NULL;
 }
 
+int
+bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc)
+{
+	int result = BPRC_OK;
+	char *capemgr_path = NULL;
+	
+	capemgr_path = find_device_syspath(bpc->bpc_udev, "driver", "bone-capemgr");
+
+out:
+	if(capemgr_path != NULL) {
+		free(capemgr_path);
+	}
+	return result;
+}
+
+
+/**
+ * @brief Gets a pointer to a specific pwm unit.
+ *
+ * @param bpc The controller.
+ * @param pwm_id The ID of the pwm unit to get.
+ *
+ * @return The pwm unit found, or NULL if out of range.
+ */
+const struct bbb_pwm_t* 
+bbb_pwm_controller_get(struct bbb_pwm_controller_t* bpc, int pwm_id)
+{
+	assert(bpc != NULL);
+	if(pwm_id > bpc->bpc_num_pwms || pwm_id < 0) {
+		return NULL;
+	}
+	return &(bpc->bpc_pwms[pwm_id]);
+}
 
 /**
  * @brief 
@@ -116,25 +130,4 @@ find_device_syspath(struct udev *probe_udev, char *sysattr, char *value)
 out:
 	udev_enumerate_unref(enumer);
 	return result;
-}
-
-
-
-
-/**
- * @brief Gets a pointer to a specific pwm unit.
- *
- * @param bpc The controller.
- * @param pwm_id The ID of the pwm unit to get.
- *
- * @return The pwm unit found, or NULL if out of range.
- */
-const struct bbb_pwm_t* 
-bbb_pwm_controller_get(struct bbb_pwm_controller_t* bpc, int pwm_id)
-{
-	assert(bpc != NULL);
-	if(pwm_id > bpc->bpc_num_pwms || pwm_id < 0) {
-		return NULL;
-	}
-	return &(bpc->bpc_pwms[pwm_id]);
 }

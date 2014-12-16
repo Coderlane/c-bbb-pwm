@@ -30,16 +30,6 @@ struct bbb_pwm_t {
  */
 struct bbb_pwm_controller_t {
 	/**
-	 * @brief 
-	 */
-	char 				 *bpc_cape_path;
-
-	/**
-	 * @brief 
-	 */
-	char 							 *bpc_ocp_path;
-
-	/**
 	 * @brief The number of pwms detected.
 	 */
 	int 								bpc_num_pwms;
@@ -55,6 +45,6 @@ struct bbb_pwm_controller_t {
 	struct udev 			 *bpc_udev;
 };
 
-
+int bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc);
 char *find_device_syspath(struct udev *probe_udev, char *sysattr, char *value);
 
