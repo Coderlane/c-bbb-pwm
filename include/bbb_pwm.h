@@ -12,13 +12,17 @@ enum bbb_pwm_state_e {
 };
 
 enum bbb_pwm_return_code_e {
-	BPRC_NOT_IMPLEMENTED = -500,
+	BPRC_NOT_IMPLEMENTED = -100,
+	BPRC_NO_CAPEMGR = -50,
 	BPRC_ERROR = -2,
 	BPRC_OK = 0
 };
 
 struct bbb_pwm_t;
-struct bbb_pwm_tuning_t;
+struct bbb_pwm_controller_t;
 
-int bbb_pwm_setup();
-int bbb_pwm_cleanup();
+struct bbb_pwm_controller_t* bbb_pwm_controller_new();
+void bbb_pwm_controller_delete(struct bbb_pwm_controller_t** bpc_ptr);
+
+const struct bbb_pwm_t* 
+bbb_pwm_controller_get(struct bbb_pwm_controller_t* bpc, int pwm_id);

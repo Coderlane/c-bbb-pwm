@@ -13,12 +13,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
 /**
  * @brief The number of pwms onboard.
  */
-#define BPC_NUM_PWMS 4
-
+//#define BPC_NUM_PWMS 4
 
 struct bbb_pwm_t {
 	uint8_t				bp_id;
@@ -28,23 +28,33 @@ struct bbb_pwm_t {
 /**
  * @brief 
  */
-struct bbb_pwm_library_t {
+struct bbb_pwm_controller_t {
 	/**
 	 * @brief 
 	 */
-	char 							 *bpl_cape_path;
+	char 				 *bpc_cape_path;
 
 	/**
 	 * @brief 
 	 */
-	char 							 *bpl_ocp_path;
+	char 							 *bpc_ocp_path;
 
-	struct bbb_pwm_t 		bpl_pwms[BPC_NUM_PWMS];
+	/**
+	 * @brief The number of pwms detected.
+	 */
+	int 								bpc_num_pwms;
 
-	struct udev 			 *bpl_udev;
+	/**
+	 * @brief The individual pwms.
+	 */
+	struct bbb_pwm_t 	 *bpc_pwms;
+
+	/**
+	 * @brief The udev reference.
+	 */
+	struct udev 			 *bpc_udev;
 };
 
-struct bbb_pwm_library_t* bbb_pwm_library_new();
 
-int bbb_pwm_library_init(struct bbb_pwm_library_t *bpl);
-void bbb_pwm_library_delete(struct bbb_pwm_library_t **bpl_ptr);
+char *find_device_syspath(struct udev *probe_udev, char *sysattr, char *value);
+
