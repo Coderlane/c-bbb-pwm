@@ -10,8 +10,8 @@
 #define BBB_PWM_H
 
 enum bbb_pwm_state_e {
-	BPS_FREE = 0,
-	BPS_BUSY = 1
+	BPS_UNCLAIMED = 0,
+	BPS_CLAIMED = 1
 };
 
 enum bbb_pwm_return_code_e {
@@ -32,11 +32,19 @@ struct bbb_pwm_controller_t;
 struct bbb_pwm_controller_t* bbb_pwm_controller_new();
 void bbb_pwm_controller_delete(struct bbb_pwm_controller_t** bpc_ptr);
 
-const struct bbb_pwm_t* 
-bbb_pwm_controller_get(struct bbb_pwm_controller_t* bpc, int pwm_id);
-
+int bbb_pwm_claim(struct bbb_pwm_t* bp);
+int bbb_pwm_unclaim(struct bbb_pwm_t* bp);
 
 int bbb_pwm_is_busy(struct bbb_pwm_t* bp);
-int bbb_pwm_is_free(struct bbb_pwm_t* bp);
+int bbb_pwm_is_unclaimed(struct bbb_pwm_t* bp);
+int bbb_pwm_is_claimed(struct bbb_pwm_t* bp);
+
+int bbb_pwm_set_duty(struct bbb_pwm_t* bp, float duty);
+int bbb_pwm_set_period(struct bbb_pwm_t* bp, float period);
+int bbb_pwm_set_polarity(struct bbb_pwm_t* bp, int polarity);
+
+float bbb_pwm_get_duty(struct bbb_pwm_t* bp);
+float bbb_pwm_get_period(struct bbb_pwm_t* bp);
+int bbb_pwm_get_polarity(struct bbb_pwm_t* bp);
 
 #endif

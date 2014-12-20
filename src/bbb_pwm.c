@@ -160,7 +160,7 @@ bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
 	result = strcmp(cur->bp_name, name);
 
 	if(result == 0) {
-		if(!bbb_pwm_is_free(cur)) {
+		if(!bbb_pwm_is_unclaimed(cur)) {
 			// Make sure it isn't locked.
 			return BPRC_BUSY;
 		}
@@ -177,7 +177,7 @@ bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
 		result = strcmp(cur->bp_name, name);
 
 		if(result == 0) {
-			if(!bbb_pwm_is_free(cur)) {
+			if(!bbb_pwm_is_unclaimed(cur)) {
 				// Make sure it isn't locked.
 				return BPRC_BUSY;
 			}
@@ -197,11 +197,11 @@ bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
 }
 
 /**
- * @brief 
+ * @brief Creates a new bbb_pwm_t.
  *
- * @param name
+ * @param name The name of the new pwm.
  *
- * @return 
+ * @return A new pwm or NULL on failure.
  */
 struct bbb_pwm_t*
 bbb_pwm_new(const char* name) 
@@ -215,7 +215,7 @@ bbb_pwm_new(const char* name)
 	assert(bp != NULL);
 
 	bp->bp_next = NULL;
-	bp->bp_state = BPS_FREE;
+	bp->bp_state = BPS_UNCLAIMED;
 	bp->bp_name = (char*) strdup(name);
 	assert(bp->bp_name != NULL);
 
@@ -223,9 +223,10 @@ bbb_pwm_new(const char* name)
 }
 
 /**
- * @brief 
+ * @brief Deletes a PWM.
+ * Will free if not already free
  *
- * @param bp_ptr
+ * @param bp_ptr The pwm to delete.
  */
 void
 bbb_pwm_delete(struct bbb_pwm_t** bp_ptr) 
@@ -237,6 +238,9 @@ bbb_pwm_delete(struct bbb_pwm_t** bp_ptr)
 	if(bp == NULL) {
 		return;
 	}
+	
+	// Only for debugging.
+	assert(bbb_pwm_is_unclaimed(bp));
 
 	if(bp->bp_name != NULL) {
 		free(bp->bp_name);
@@ -247,29 +251,48 @@ bbb_pwm_delete(struct bbb_pwm_t** bp_ptr)
 }
 
 /**
- * @brief 
+ * @brief Check to see if the pwm is busy.
  *
- * @param bp
+ * @param bp The pwm to check.
  *
- * @return 
+ * @return True/False is the pwm busy.
  */
 int 
 bbb_pwm_is_busy(struct bbb_pwm_t* bp)
 {
 	assert(bp != NULL);
-	return bp->bp_state == BPS_BUSY;
+	if(bp->bp_state == BPS_CLAIMED) {
+		// We claim it
+		return 0;
+	}
+	// TODO: Check the files to see if they are in use by someone else.
+	return 0;	
 }
 
 /**
- * @brief 
+ * @brief Check to see if the pwm is unclaimed.
  *
- * @param bp
+ * @param bp The pwm to check.
  *
- * @return 
+ * @return True/False is the pwm unclaimed.
  */
 int 
-bbb_pwm_is_free(struct bbb_pwm_t* bp)
+bbb_pwm_is_unclaimed(struct bbb_pwm_t* bp)
 {
 	assert(bp != NULL);
-	return bp->bp_state == BPS_FREE;
+	return bp->bp_state == BPS_UNCLAIMED;
+}
+
+/**
+ * @brief Check to see if we have claimership of the pwm.
+ *
+ * @param bp The pwm to check.
+ *
+ * @return True/False if we have claimership.
+ */
+int
+bbb_pwm_is_claimed(struct bbb_pwm_t* bp)
+{
+	assert(bp != NULL);
+	return bp->bp_state == BPS_CLAIMED;
 }
