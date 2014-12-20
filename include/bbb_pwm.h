@@ -10,7 +10,14 @@
 #define BBB_PWM_H
 
 enum bbb_pwm_state_e {
+	/**
+	 * @brief The pwm is unclaimed.
+	 */
 	BPS_UNCLAIMED = 0,
+	
+	/**
+	 * @brief The pwm is claimed.
+	 */
 	BPS_CLAIMED = 1
 };
 
@@ -38,7 +45,6 @@ void bbb_pwm_controller_delete(struct bbb_pwm_controller_t** bpc_ptr);
 int bbb_pwm_claim(struct bbb_pwm_t* bp);
 int bbb_pwm_unclaim(struct bbb_pwm_t* bp);
 
-int bbb_pwm_is_busy(struct bbb_pwm_t* bp);
 int bbb_pwm_is_unclaimed(struct bbb_pwm_t* bp);
 int bbb_pwm_is_claimed(struct bbb_pwm_t* bp);
 

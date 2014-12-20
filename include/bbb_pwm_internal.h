@@ -21,11 +21,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-/**
- * @brief The number of pwms onboard.
- */
-//#define BPC_NUM_PWMS 4
 
+/**
+ * @brief Represents a detected pwm.
+ */
 struct bbb_pwm_t {
 	
 	/**
@@ -38,16 +37,35 @@ struct bbb_pwm_t {
 	 */
 	char 									 *bp_name;
 
-	char 									 *bp_duty_file_path;
-	char 									 *bp_period_file_path;
-	char 									 *bp_polarity_file_path;
-
-
+	/**
+	 * @brief The cached pwm duty cycle.
+	 */
 	float										bp_duty;
 
+	/**
+	 * @brief The cached pwm period.
+	 */
 	float 									bp_period;
 
+	/**
+	 * @brief The cached pwm polarity.
+	 */
 	int 										bp_polarity;
+
+	/**
+	 * @brief The file path of the duty file.
+	 */
+	char 									 *bp_duty_file_path;
+
+	/**
+	 * @brief The file path of the period file.
+	 */
+	char 									 *bp_period_file_path;
+
+	/**
+	 * @brief The file path of the polarity file.
+	 */
+	char 									 *bp_polarity_file_path;
 
 	/**
 	 * @brief The file with the pwm's duty data.
@@ -71,9 +89,11 @@ struct bbb_pwm_t {
 };
 
 /**
- * @brief 
+ * @brief A controller enables/disables pwm functionality.
+ * It also detects pwms and makes them avaliable for use.
  */
 struct bbb_pwm_controller_t {
+	
 	/**
 	 * @brief The number of pwms detected.
 	 */

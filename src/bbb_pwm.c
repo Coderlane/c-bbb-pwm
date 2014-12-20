@@ -41,6 +41,7 @@ void
 bbb_pwm_controller_delete(struct bbb_pwm_controller_t **bpc_ptr) 
 {
 	struct bbb_pwm_controller_t *bpc;
+
 	// Check the ptr.
 	if(bpc_ptr == NULL) {
 		return;
@@ -49,6 +50,12 @@ bbb_pwm_controller_delete(struct bbb_pwm_controller_t **bpc_ptr)
 	bpc = (*bpc_ptr);
 	if(bpc == NULL) {
 		return;
+	}
+
+	while(bpc->bpc_head_pwm) {
+		// Unclaim before we remove it.
+		bbb_pwm_unclaim(bpc->bpc_head_pwm);
+		bbb_pwm_controller_remove_pwm(bpc, bpc->bpc_head_pwm->bp_name);
 	}
 
 	// Free the origional bpc
@@ -89,6 +96,8 @@ int
 bbb_pwm_controller_probe(struct bbb_pwm_controller_t* bpc)
 {
 
+	assert(bpc != NULL);
+	
 	return BPRC_NOT_IMPLEMENTED;
 }
 
@@ -117,7 +126,7 @@ bbb_pwm_controller_add_pwm(struct bbb_pwm_controller_t* bpc,
 		return BPRC_OK;
 	}
 
-	result = strcmp(cur->bp_name, bp->bp_name);
+	result = strcmp(bp->bp_name, cur->bp_name);
 
 	if(result == 0) {
 		// Front was duplicate.
@@ -132,7 +141,7 @@ bbb_pwm_controller_add_pwm(struct bbb_pwm_controller_t* bpc,
 	}
 
 	while(cur->bp_next != NULL) {
-		result = strcmp(cur->bp_next->bp_name, bp->bp_name);
+		result = strcmp(bp->bp_name, cur->bp_next->bp_name);
 
 		if(result == 0) {
 			// Found a duplicate item.
@@ -145,6 +154,8 @@ bbb_pwm_controller_add_pwm(struct bbb_pwm_controller_t* bpc,
 			cur->bp_next = bp;
 			return BPRC_OK;
 		}
+		// Increment cur.
+		cur = cur->bp_next;
 	}
 	// Insert at end.
 	cur->bp_next = bp;
@@ -167,7 +178,14 @@ bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
 	struct bbb_pwm_t* cur;
 	int result;
 
+	assert(bpc != NULL);
+	assert(name != NULL);
+
 	cur = bpc->bpc_head_pwm;
+	if(cur == NULL) {
+		return BPRC_PWM_NOT_FOUND;
+	}
+
 	result = strcmp(cur->bp_name, name);
 
 	if(result == 0) {
@@ -178,30 +196,40 @@ bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
 		// First item was the one to delete.
 		bpc->bpc_head_pwm = cur->bp_next;
 		bbb_pwm_delete(&cur);
+		bpc->bpc_num_pwms--;
+		return BPRC_OK;
 	}
 
-	if(result < 0) {
+	if(result > 0) {
 		return BPRC_PWM_NOT_FOUND;
 	}
 
-	while(cur != NULL) {
-		result = strcmp(cur->bp_name, name);
+	while(cur->bp_next != NULL) {
+		result = strcmp(cur->bp_next->bp_name, name);
 
 		if(result == 0) {
+			// Found our target.
+			struct bbb_pwm_t* tmp = cur->bp_next;
+
 			if(!bbb_pwm_is_unclaimed(cur)) {
 				// Make sure it isn't locked.
 				return BPRC_BUSY;
 			}
-			// First item was the one to delete.
-			bpc->bpc_head_pwm = cur->bp_next;
-			bbb_pwm_delete(&cur);
+
+			// Remove it from the linked list.
+			cur->bp_next = tmp->bp_next;
+			bbb_pwm_delete(&tmp);
+			bpc->bpc_num_pwms--;
+
+			return BPRC_OK;
 		}
 
-		if(result < 0) {
+		if(result > 0) {
 			return BPRC_PWM_NOT_FOUND;
 		}
 		// Move on.
 		cur = cur->bp_next;
+		assert(cur != NULL);
 	}
 
 	return BPRC_PWM_NOT_FOUND;
@@ -234,7 +262,7 @@ bbb_pwm_new(const char* name)
 
 /**
  * @brief Deletes a PWM.
- * Will free if not already free
+ * This will unclaim if claimed.
  *
  * @param bp_ptr The pwm to delete.
  */
@@ -248,12 +276,25 @@ bbb_pwm_delete(struct bbb_pwm_t** bp_ptr)
 	if(bp == NULL) {
 		return;
 	}
-	
-	// Only for debugging.
-	assert(bbb_pwm_is_unclaimed(bp));
 
+	// Unclaim, since we are freeing.	
+	bbb_pwm_unclaim(bp);	
+	
+	// Free what has been allocated. 
 	if(bp->bp_name != NULL) {
 		free(bp->bp_name);
+	}
+
+	if(bp->bp_duty_file_path != NULL) {
+		free(bp->bp_duty_file_path);
+	}
+
+	if(bp->bp_period_file_path != NULL) {
+		free(bp->bp_period_file_path);
+	}
+
+	if(bp->bp_polarity_file_path != NULL) {
+		free(bp->bp_polarity_file_path);
 	}
 
 	free(bp);
@@ -278,6 +319,7 @@ bbb_pwm_claim(struct bbb_pwm_t* bp)
 	assert(bp->bp_period_file_path != NULL);
 	assert(bp->bp_polarity_file_path != NULL);
 
+	// Open the necessary files.
 	bp->bp_duty_file = fopen(bp->bp_duty_file_path, "w+");
 	if(bp->bp_duty_file == NULL) {
 		result = BPRC_BUSY;
@@ -296,6 +338,7 @@ bbb_pwm_claim(struct bbb_pwm_t* bp)
 		goto out;
 	}
 
+	// Load the cached values.
 	result = get_duty_from_file(bp->bp_duty_file, &(bp->bp_duty));
 	if(result != BPRC_OK) {
 		goto out;
@@ -313,6 +356,7 @@ bbb_pwm_claim(struct bbb_pwm_t* bp)
 
 out:
 	if(result != BPRC_OK) {
+		// On failure, unclaim will force a cleanup.
 		bbb_pwm_unclaim(bp);
 	}
 	return result;
@@ -347,25 +391,6 @@ bbb_pwm_unclaim(struct bbb_pwm_t* bp)
 		bp->bp_polarity_file = NULL;
 	}
 	return BPRC_OK;
-}
-
-/**
- * @brief Check to see if the pwm is busy.
- *
- * @param bp The pwm to check.
- *
- * @return True/False is the pwm busy.
- */
-int 
-bbb_pwm_is_busy(struct bbb_pwm_t* bp)
-{
-	assert(bp != NULL);
-	if(bp->bp_state == BPS_CLAIMED) {
-		// We claim it
-		return 0;
-	}
-	// TODO: Check the files to see if they are in use by someone else.
-	return 0;	
 }
 
 /**
