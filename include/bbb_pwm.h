@@ -16,6 +16,9 @@ enum bbb_pwm_state_e {
 
 enum bbb_pwm_return_code_e {
 	BPRC_NOT_IMPLEMENTED = -100,
+	BPRC_BAD_FILE = -57,
+	BPRC_RANGE = -56,
+	BPRC_NOT_CLAIMED = -55,
 	BPRC_BUSY = -54,
 	BPRC_PWM_NOT_FOUND = -53,
 	BPRC_DUPLICATE = -52,
@@ -43,8 +46,8 @@ int bbb_pwm_set_duty(struct bbb_pwm_t* bp, float duty);
 int bbb_pwm_set_period(struct bbb_pwm_t* bp, float period);
 int bbb_pwm_set_polarity(struct bbb_pwm_t* bp, int polarity);
 
-float bbb_pwm_get_duty(struct bbb_pwm_t* bp);
-float bbb_pwm_get_period(struct bbb_pwm_t* bp);
-int bbb_pwm_get_polarity(struct bbb_pwm_t* bp);
+int bbb_pwm_get_duty(struct bbb_pwm_t* bp, float* out_duty);
+int bbb_pwm_get_period(struct bbb_pwm_t* bp, float* out_period);
+int bbb_pwm_get_polarity(struct bbb_pwm_t* bp, int* out_polarity);
 
 #endif

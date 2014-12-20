@@ -23,8 +23,12 @@ bbb_pwm_controller_new()
 
 	if(bbb_pwm_controller_init(bpc) != BPRC_OK) {
 		bbb_pwm_controller_delete(&bpc);
+		goto out;
 	}
 
+	bbb_pwm_controller_probe(bpc);
+
+out:
 	return bpc;
 }
 
@@ -74,21 +78,27 @@ bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc)
 	return BPRC_OK;
 }
 
+/**
+ * @brief Probe the filesystem for obvious PWM devices.
+ *
+ * @param bpc The controller to probe on.
+ *
+ * @return A status code.
+ */
 int 
 bbb_pwm_controller_probe(struct bbb_pwm_controller_t* bpc)
 {
-
 
 	return BPRC_NOT_IMPLEMENTED;
 }
 
 /**
- * @brief 
+ * @brief Adds a PWM to a controller. 
  *
- * @param bpc
- * @param bp
+ * @param bpc The controller to add to.
+ * @param bp The PWM to add.
  *
- * @return 
+ * @return A status code.
  */
 int 
 bbb_pwm_controller_add_pwm(struct bbb_pwm_controller_t* bpc, 
@@ -142,12 +152,13 @@ bbb_pwm_controller_add_pwm(struct bbb_pwm_controller_t* bpc,
 }
 
 /**
- * @brief 
+ * @brief Removes a PWM from a controller.
+ * Note, the PWM must not be in use.
  *
- * @param bpc
- * @param name
+ * @param bpc The comtroller to remove the pwm from.
+ * @param name The name of the PWM to remove.
  *
- * @return 
+ * @return A status code.
  */
 int 
 bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
@@ -211,10 +222,9 @@ bbb_pwm_new(const char* name)
 		return NULL;
 	}
 
-	bp = malloc(sizeof(struct bbb_pwm_t));
+	bp = calloc(sizeof(struct bbb_pwm_t), 1);
 	assert(bp != NULL);
 
-	bp->bp_next = NULL;
 	bp->bp_state = BPS_UNCLAIMED;
 	bp->bp_name = (char*) strdup(name);
 	assert(bp->bp_name != NULL);
@@ -248,6 +258,95 @@ bbb_pwm_delete(struct bbb_pwm_t** bp_ptr)
 
 	free(bp);
 	*bp_ptr = NULL;	
+}
+
+/**
+ * @brief Claims a pwm for later setting values.
+ * If someone else has claimed this pwm, we fail and report BUSY.
+ *
+ * @param bp The pwm to claim.
+ *
+ * @return A status code.
+ */
+int 
+bbb_pwm_claim(struct bbb_pwm_t* bp)
+{
+	int result = BPRC_OK;
+
+	assert(bp != NULL);
+	assert(bp->bp_duty_file_path != NULL);
+	assert(bp->bp_period_file_path != NULL);
+	assert(bp->bp_polarity_file_path != NULL);
+
+	bp->bp_duty_file = fopen(bp->bp_duty_file_path, "w+");
+	if(bp->bp_duty_file == NULL) {
+		result = BPRC_BUSY;
+		goto out;
+	}
+	
+	bp->bp_period_file = fopen(bp->bp_period_file_path, "w+");
+	if(bp->bp_period_file == NULL) {
+		result = BPRC_BUSY;
+		goto out;
+	}
+	
+	bp->bp_polarity_file = fopen(bp->bp_polarity_file_path, "w+");
+	if(bp->bp_polarity_file == NULL) {
+		result = BPRC_BUSY;
+		goto out;
+	}
+
+	result = get_duty_from_file(bp->bp_duty_file, &(bp->bp_duty));
+	if(result != BPRC_OK) {
+		goto out;
+	}
+	
+	result = get_period_from_file(bp->bp_period_file, &(bp->bp_period));
+	if(result != BPRC_OK) {
+		goto out;
+	}
+	
+	result = get_polarity_from_file(bp->bp_polarity_file, &(bp->bp_polarity));
+	if(result != BPRC_OK) {
+		goto out;
+	}
+
+out:
+	if(result != BPRC_OK) {
+		bbb_pwm_unclaim(bp);
+	}
+	return result;
+}
+
+/**
+ * @brief Unclaims a pwm.
+ *
+ * @param bp The pwm to unclaim.
+ *
+ * @return A status code.
+ */
+int 
+bbb_pwm_unclaim(struct bbb_pwm_t* bp)
+{
+	assert(bp != NULL);
+
+	bp->bp_state = BPS_UNCLAIMED;
+	// Close the duty file.	
+	if(bp->bp_duty_file != NULL) {
+		fclose(bp->bp_duty_file);
+		bp->bp_duty_file = NULL;
+	}
+	// Close the period file.
+	if(bp->bp_period_file != NULL) {
+		fclose(bp->bp_period_file);
+		bp->bp_period_file = NULL;
+	}
+	// Close the polarity file.
+	if(bp->bp_polarity_file != NULL) {
+		fclose(bp->bp_polarity_file);
+		bp->bp_polarity_file = NULL;
+	}
+	return BPRC_OK;
 }
 
 /**
@@ -295,4 +394,253 @@ bbb_pwm_is_claimed(struct bbb_pwm_t* bp)
 {
 	assert(bp != NULL);
 	return bp->bp_state == BPS_CLAIMED;
+}
+
+/**
+ * @brief Set the duty of the pwm.
+ * NOTE: The pwm must be claimed to set anything on it.
+ *
+ * @param bp The pwm to set.
+ * @param duty The duty to set the pwm to.
+ *
+ * @return A status code.
+ */
+int 
+bbb_pwm_set_duty(struct bbb_pwm_t* bp, float duty)
+{
+	assert(bp != NULL);
+
+	if(!bbb_pwm_is_claimed(bp)) {
+		return BPRC_NOT_CLAIMED;
+	}
+
+	if(duty > 100 || duty < 0) {
+		return BPRC_RANGE;
+	}
+
+	// TODO Write to the duty file.
+	return BPRC_NOT_IMPLEMENTED;
+}
+
+/**
+ * @brief Set the period of the pwm.
+ * NOTE: The pwm must be claimed to set anything on it.
+ *
+ * @param bp The pwm to set.
+ * @param period The period to set it to.
+ *
+ * @return A status code. 
+ */
+int 
+bbb_pwm_set_period(struct bbb_pwm_t* bp, float period)
+{
+	assert(bp != NULL);
+
+	if(!bbb_pwm_is_claimed(bp)) {
+		return BPRC_NOT_CLAIMED;
+	}
+
+	if(period < 0) {
+		// TODO determin upper period limit.
+		return BPRC_RANGE;
+	}
+
+	// TODO Write to the period file.
+	return BPRC_NOT_IMPLEMENTED;
+
+}
+
+/**
+ * @brief Sets the polarity of the pwm.
+ * NOTE: The pwm must be claimed to set anything on it.
+ *
+ * @param bp The pwm to set.
+ * @param polarity The polarity to set the pwm to.
+ *
+ * @return A status code.
+ */
+int 
+bbb_pwm_set_polarity(struct bbb_pwm_t* bp, int polarity)
+{
+	assert(bp != NULL);
+
+	if(!bbb_pwm_is_claimed(bp)) {
+		return BPRC_NOT_CLAIMED;
+	}
+
+	if(polarity < -1 || polarity > 1) {
+		// TODO Verify these limits.
+		return BPRC_RANGE;
+	}
+
+	// TODO Write to the polarity file.
+	return BPRC_NOT_IMPLEMENTED;
+}
+
+/**
+ * @brief Gets the duty of a pwm.
+ * If the pwm isn't claimed, we attempt to open the right file for reading.
+ * Note that this may fail if someone else owns it.
+ *
+ * @param bp The pwm to read from.
+ * @param out_duty THe duty read.
+ *
+ * @return A status code.
+ */
+int 
+bbb_pwm_get_duty(struct bbb_pwm_t* bp, float* out_duty)
+{
+	FILE* duty_file = NULL;
+	int result = BPRC_OK;
+	
+	assert(bp != NULL);
+	assert(out_duty != NULL);
+
+	if(bbb_pwm_is_claimed(bp)) {
+		*out_duty = bp->bp_duty;
+		goto out;
+	}
+
+	duty_file = fopen(bp->bp_duty_file_path, "r");
+	if(duty_file == NULL) {
+		result = BPRC_BUSY;
+		goto out;
+	}
+	
+	result = get_duty_from_file(duty_file, out_duty);
+out:
+	if(duty_file != NULL) {
+		fclose(duty_file);
+	}
+	return result;
+}
+
+/**
+ * @brief Gets the period of a pwm.
+ * If the pwm isn't claimed, we attempt to open the right file for reading.
+ * Note that this may fail if someone else owns it.
+ * 
+ * @param bp The pwm to read from.
+ * @param out_period The period read.
+ * 
+ * @return A status code.
+ */
+int 
+bbb_pwm_get_period(struct bbb_pwm_t* bp, float* out_period)
+{
+	FILE* period_file = NULL;
+	int result = BPRC_OK;
+
+	assert(bp != NULL);
+	assert(out_period != NULL);
+	
+	if(bbb_pwm_is_claimed(bp)) {
+		*out_period = bp->bp_period;
+		goto out;
+	}
+
+	period_file = fopen(bp->bp_period_file_path, "r");
+	if(period_file == NULL) {
+		result = BPRC_BUSY;
+		goto out;
+	}
+	
+	result = get_period_from_file(period_file, out_period);
+out:
+	if(period_file != NULL) {
+		fclose(period_file);
+	}
+	return result;
+}
+
+/**
+ * @brief Gets the polarity of a pwm. 
+ * If the pwm isn't claimed, we attempt to open the right file for reading.
+ * Note that this may fail if someone else owns it.
+ *
+ * @param bp The pwm to read from. 
+ * @param out_polarity The polarity read.
+ *
+ * @return A status code.
+ */
+int 
+bbb_pwm_get_polarity(struct bbb_pwm_t* bp, int* out_polarity)
+{
+	FILE* polarity_file = NULL;
+	int result = BPRC_OK;
+
+	assert(bp != NULL);
+	assert(out_polarity != NULL);
+
+	if(bbb_pwm_is_claimed(bp)) {
+		*out_polarity = bp->bp_polarity;
+		goto out;
+	}
+
+	polarity_file = fopen(bp->bp_polarity_file_path, "r");
+	if(polarity_file == NULL) {
+		result = BPRC_BUSY;
+		goto out;
+	}
+
+	result = get_polarity_from_file(polarity_file, out_polarity);
+out:
+	if(polarity_file != NULL) {
+		fclose(polarity_file);
+	}
+	return result;
+}
+
+/**
+ * @brief Gets the duty of a pwm from a file.
+ *
+ * @param file The file to get the duty from.
+ * @param out_duty THe duty read.
+ *
+ * @return A status code. 
+ */
+int
+get_duty_from_file(FILE* file, float* out_duty)
+{
+	assert(out_duty != NULL);
+	if(file == NULL) {
+		return BPRC_BAD_FILE;
+	}
+	return BPRC_NOT_IMPLEMENTED;
+}
+
+/**
+ * @brief Gets the period of a pwm from a file.
+ *
+ * @param file The file to get the polarity from.
+ * @param out_period The period read.
+ *
+ * @return A status code.
+ */
+int 
+get_period_from_file(FILE* file, float* out_period)
+{
+	assert(out_period != NULL);
+	if(file == NULL) {
+		return BPRC_BAD_FILE;
+	}
+	return BPRC_NOT_IMPLEMENTED;
+}
+
+/**
+ * @brief Gets the polarity of a pwm from a file.
+ *
+ * @param file The file to get the polarity from.
+ * @param out_polarity The polarity read.
+ *
+ * @return A status code.
+ */
+int 
+get_polarity_from_file(FILE* file, int* out_polarity)
+{
+	assert(out_polarity != NULL);
+	if(file == NULL) {
+		return BPRC_BAD_FILE;
+	}
+	return BPRC_NOT_IMPLEMENTED;
 }

@@ -27,8 +27,46 @@
 //#define BPC_NUM_PWMS 4
 
 struct bbb_pwm_t {
+	
+	/**
+	 * @brief The current state of the pwm.
+	 */
 	enum bbb_pwm_state_e    bp_state;
+
+	/**
+	 * @brief The name of this pwm.
+	 */
 	char 									 *bp_name;
+
+	char 									 *bp_duty_file_path;
+	char 									 *bp_period_file_path;
+	char 									 *bp_polarity_file_path;
+
+
+	float										bp_duty;
+
+	float 									bp_period;
+
+	int 										bp_polarity;
+
+	/**
+	 * @brief The file with the pwm's duty data.
+	 */
+	FILE 									 *bp_duty_file;
+
+	/**
+	 * @brief The file with the pwm's period data.
+	 */
+	FILE 									 *bp_period_file;
+
+	/**
+	 * @brief The file with the pwm's polarity data.
+	 */
+	FILE 									 *bp_polarity_file;
+
+	/**
+	 * @brief The next PWM in the list of PWMs, NULL signifies the end.
+	 */
 	struct bbb_pwm_t		 	 *bp_next;
 };
 
@@ -57,7 +95,13 @@ int bbb_pwm_controller_add_pwm(struct bbb_pwm_controller_t* bpc,
 		struct bbb_pwm_t* bp);
 int bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
 	 	const char* name);
+int bbb_pwm_controller_probe(struct bbb_pwm_controller_t* bpc);
 
 struct bbb_pwm_t* bbb_pwm_new(const char* name);
 void bbb_pwm_delete(struct bbb_pwm_t** bp_ptr);
+
+int get_duty_from_file(FILE* file, float* out_duty);
+int get_period_from_file(FILE* file, float* out_period);
+int get_polarity_from_file(FILE* file, int* out_polarity);
+
 #endif
