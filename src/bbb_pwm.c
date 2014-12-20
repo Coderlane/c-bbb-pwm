@@ -483,7 +483,7 @@ bbb_pwm_set_polarity(struct bbb_pwm_t* bp, int polarity)
  * Note that this may fail if someone else owns it.
  *
  * @param bp The pwm to read from.
- * @param out_duty THe duty read.
+ * @param[out] out_duty THe duty read.
  *
  * @return A status code.
  */
@@ -521,7 +521,7 @@ out:
  * Note that this may fail if someone else owns it.
  * 
  * @param bp The pwm to read from.
- * @param out_period The period read.
+ * @param[out] out_period The period read.
  * 
  * @return A status code.
  */
@@ -559,7 +559,7 @@ out:
  * Note that this may fail if someone else owns it.
  *
  * @param bp The pwm to read from. 
- * @param out_polarity The polarity read.
+ * @param[out] out_polarity The polarity read.
  *
  * @return A status code.
  */
@@ -595,7 +595,7 @@ out:
  * @brief Gets the duty of a pwm from a file.
  *
  * @param file The file to get the duty from.
- * @param out_duty THe duty read.
+ * @param[out] out_duty THe duty read.
  *
  * @return A status code. 
  */
@@ -613,7 +613,7 @@ get_duty_from_file(FILE* file, float* out_duty)
  * @brief Gets the period of a pwm from a file.
  *
  * @param file The file to get the polarity from.
- * @param out_period The period read.
+ * @param[out] out_period The period read.
  *
  * @return A status code.
  */
@@ -631,7 +631,7 @@ get_period_from_file(FILE* file, float* out_period)
  * @brief Gets the polarity of a pwm from a file.
  *
  * @param file The file to get the polarity from.
- * @param out_polarity The polarity read.
+ * @param[out] out_polarity The polarity read.
  *
  * @return A status code.
  */
