@@ -16,6 +16,9 @@ enum bbb_pwm_state_e {
 
 enum bbb_pwm_return_code_e {
 	BPRC_NOT_IMPLEMENTED = -100,
+	BPRC_BUSY = -54,
+	BPRC_PWM_NOT_FOUND = -53,
+	BPRC_DUPLICATE = -52,
 	BPRC_NO_PWM = -51,
 	BPRC_NO_CAPEMGR = -50,
 	BPRC_NO_MEM = -3,
@@ -31,5 +34,9 @@ void bbb_pwm_controller_delete(struct bbb_pwm_controller_t** bpc_ptr);
 
 const struct bbb_pwm_t* 
 bbb_pwm_controller_get(struct bbb_pwm_controller_t* bpc, int pwm_id);
+
+
+int bbb_pwm_is_busy(struct bbb_pwm_t* bp);
+int bbb_pwm_is_free(struct bbb_pwm_t* bp);
 
 #endif

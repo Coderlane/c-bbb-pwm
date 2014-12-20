@@ -15,10 +15,10 @@
 
 #include <libudev.h>
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
 
 /**
@@ -27,8 +27,9 @@
 //#define BPC_NUM_PWMS 4
 
 struct bbb_pwm_t {
-	uint8_t				bp_id;
-	
+	enum bbb_pwm_state_e    bp_state;
+	char 									 *bp_name;
+	struct bbb_pwm_t		 	 *bp_next;
 };
 
 /**
@@ -43,11 +44,20 @@ struct bbb_pwm_controller_t {
 	/**
 	 * @brief The individual pwms.
 	 */
-	struct bbb_pwm_t 	 		 *bpc_pwms;
+	struct bbb_pwm_t 	 		 *bpc_head_pwm;
 
+	/**
+	 * @brief The capemanager.
+	 */
 	struct bbb_capemgr_t 	 *bpc_capemgr;
 };
 
-int bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc);
+int bbb_pwm_controller_init(struct bbb_pwm_controller_t* bpc);
+int bbb_pwm_controller_add_pwm(struct bbb_pwm_controller_t* bpc,
+		struct bbb_pwm_t* bp);
+int bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
+	 	const char* name);
 
+struct bbb_pwm_t* bbb_pwm_new(const char* name);
+void bbb_pwm_delete(struct bbb_pwm_t** bp_ptr);
 #endif

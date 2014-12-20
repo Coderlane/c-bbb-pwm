@@ -17,14 +17,14 @@ struct bbb_pwm_controller_t*
 bbb_pwm_controller_new()
 {
 	struct bbb_pwm_controller_t* bpc = NULL;
-	
+
 	bpc = calloc(sizeof(struct bbb_pwm_controller_t), 1);
 	assert(bpc != NULL);
-	
+
 	if(bbb_pwm_controller_init(bpc) != BPRC_OK) {
 		bbb_pwm_controller_delete(&bpc);
 	}
-	
+
 	return bpc;
 }
 
@@ -66,7 +66,7 @@ bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc)
 	if(bpc->bpc_capemgr == NULL) {
 		return BPRC_NO_CAPEMGR;
 	}	
-	
+
 	if(bbb_capemgr_enable(bpc->bpc_capemgr, "am33xx_pwm") < 0) {
 		return BPRC_NO_PWM;
 	}
@@ -74,20 +74,202 @@ bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc)
 	return BPRC_OK;
 }
 
-/**
- * @brief Gets a pointer to a specific pwm unit.
- *
- * @param bpc The controller.
- * @param pwm_id The ID of the pwm unit to get.
- *
- * @return The pwm unit found, or NULL if out of range.
- */
-const struct bbb_pwm_t* 
-bbb_pwm_controller_get(struct bbb_pwm_controller_t* bpc, int pwm_id)
+int 
+bbb_pwm_controller_probe(struct bbb_pwm_controller_t* bpc)
 {
+
+
+	return BPRC_NOT_IMPLEMENTED;
+}
+
+/**
+ * @brief 
+ *
+ * @param bpc
+ * @param bp
+ *
+ * @return 
+ */
+int 
+bbb_pwm_controller_add_pwm(struct bbb_pwm_controller_t* bpc, 
+		struct bbb_pwm_t* bp)
+{
+	struct bbb_pwm_t* cur = NULL;
+	int result;
+
 	assert(bpc != NULL);
-	if(pwm_id > bpc->bpc_num_pwms || pwm_id < 0) {
+	assert(bp != NULL);
+
+	cur = bpc->bpc_head_pwm;
+	if(cur == NULL) {
+		// New list.
+		bpc->bpc_head_pwm = bp;
+		return BPRC_OK;
+	}
+
+	result = strcmp(cur->bp_name, bp->bp_name);
+
+	if(result == 0) {
+		// Front was duplicate.
+		return BPRC_DUPLICATE;
+	}
+
+	if(result < 0) {
+		// Insert in front.
+		bp->bp_next = cur;
+		bpc->bpc_head_pwm = bp;
+		return BPRC_OK;
+	}
+
+	while(cur->bp_next != NULL) {
+		result = strcmp(cur->bp_next->bp_name, bp->bp_name);
+
+		if(result == 0) {
+			// Found a duplicate item.
+			return BPRC_DUPLICATE;
+		}
+
+		if(result < 0) {
+			// Found our place.
+			bp->bp_next = cur->bp_next;
+			cur->bp_next = bp;
+			return BPRC_OK;
+		}
+	}
+	// Insert at end.
+	cur->bp_next = bp;
+	return BPRC_OK;
+}
+
+/**
+ * @brief 
+ *
+ * @param bpc
+ * @param name
+ *
+ * @return 
+ */
+int 
+bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
+		const char* name)
+{
+	struct bbb_pwm_t* cur;
+	int result;
+
+	cur = bpc->bpc_head_pwm;
+	result = strcmp(cur->bp_name, name);
+
+	if(result == 0) {
+		if(!bbb_pwm_is_free(cur)) {
+			// Make sure it isn't locked.
+			return BPRC_BUSY;
+		}
+		// First item was the one to delete.
+		bpc->bpc_head_pwm = cur->bp_next;
+		bbb_pwm_delete(&cur);
+	}
+
+	if(result < 0) {
+		return BPRC_PWM_NOT_FOUND;
+	}
+
+	while(cur != NULL) {
+		result = strcmp(cur->bp_name, name);
+
+		if(result == 0) {
+			if(!bbb_pwm_is_free(cur)) {
+				// Make sure it isn't locked.
+				return BPRC_BUSY;
+			}
+			// First item was the one to delete.
+			bpc->bpc_head_pwm = cur->bp_next;
+			bbb_pwm_delete(&cur);
+		}
+
+		if(result < 0) {
+			return BPRC_PWM_NOT_FOUND;
+		}
+		// Move on.
+		cur = cur->bp_next;
+	}
+
+	return BPRC_PWM_NOT_FOUND;
+}
+
+/**
+ * @brief 
+ *
+ * @param name
+ *
+ * @return 
+ */
+struct bbb_pwm_t*
+bbb_pwm_new(const char* name) 
+{
+	struct bbb_pwm_t* bp;
+	if(name == NULL) {
 		return NULL;
 	}
-	return &(bpc->bpc_pwms[pwm_id]);
+
+	bp = malloc(sizeof(struct bbb_pwm_t));
+	assert(bp != NULL);
+
+	bp->bp_next = NULL;
+	bp->bp_state = BPS_FREE;
+	bp->bp_name = (char*) strdup(name);
+	assert(bp->bp_name != NULL);
+
+	return bp;
+}
+
+/**
+ * @brief 
+ *
+ * @param bp_ptr
+ */
+void
+bbb_pwm_delete(struct bbb_pwm_t** bp_ptr) 
+{
+	struct bbb_pwm_t* bp;
+	assert(bp_ptr != NULL);
+
+	bp = *bp_ptr;
+	if(bp == NULL) {
+		return;
+	}
+
+	if(bp->bp_name != NULL) {
+		free(bp->bp_name);
+	}
+
+	free(bp);
+	*bp_ptr = NULL;	
+}
+
+/**
+ * @brief 
+ *
+ * @param bp
+ *
+ * @return 
+ */
+int 
+bbb_pwm_is_busy(struct bbb_pwm_t* bp)
+{
+	assert(bp != NULL);
+	return bp->bp_state == BPS_BUSY;
+}
+
+/**
+ * @brief 
+ *
+ * @param bp
+ *
+ * @return 
+ */
+int 
+bbb_pwm_is_free(struct bbb_pwm_t* bp)
+{
+	assert(bp != NULL);
+	return bp->bp_state == BPS_FREE;
 }
