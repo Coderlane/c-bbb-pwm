@@ -22,6 +22,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
+#include <unistd.h>
 
 /**
  * @brief Represents a detected pwm.
@@ -39,19 +41,19 @@ struct bbb_pwm_t {
 	char 									 *bp_name;
 
 	/**
-	 * @brief The cached pwm duty cycle.
+	 * @brief The cached pwm duty cycle. 
 	 */
-	float										bp_duty;
+	uint32_t 									bp_duty_cycle;
 
 	/**
-	 * @brief The cached pwm period.
+	 * @brief The cached pwm period (in nanoseconds).
 	 */
-	float 									bp_period;
+	uint32_t 									bp_period;
 
 	/**
 	 * @brief The cached pwm polarity.
 	 */
-	int 										bp_polarity;
+	int8_t 										bp_polarity;
 
 	/**
 	 * @brief The file path of the duty file.
@@ -98,7 +100,7 @@ struct bbb_pwm_controller_t {
 	/**
 	 * @brief The number of pwms detected.
 	 */
-	int 										bpc_num_pwms;
+	int8_t 									bpc_num_pwms;
 
 	/**
 	 * @brief The individual pwms.
@@ -121,8 +123,10 @@ int bbb_pwm_controller_probe(struct bbb_pwm_controller_t* bpc);
 struct bbb_pwm_t* bbb_pwm_new(const char* name, const char* root_path);
 void bbb_pwm_delete(struct bbb_pwm_t** bp_ptr);
 
-int get_duty_from_file(FILE* file, float* out_duty);
-int get_period_from_file(FILE* file, float* out_period);
-int get_polarity_from_file(FILE* file, int* out_polarity);
+int read_uint32_from_file(FILE* file, uint32_t* out_data);
+int read_int8_from_file(FILE* file, int8_t* out_data);
+
+int write_uint32_to_file(FILE* file, uint32_t data);
+int write_int8_to_file(FILE* file, int8_t data);
 
 #endif

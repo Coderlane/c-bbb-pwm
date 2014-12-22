@@ -344,17 +344,17 @@ bbb_pwm_claim(struct bbb_pwm_t* bp)
 	}
 
 	// Load the cached values.
-	result = get_duty_from_file(bp->bp_duty_file, &(bp->bp_duty));
+	result = read_uint32_from_file(bp->bp_duty_file, &(bp->bp_duty_cycle));
 	if(result != BPRC_OK) {
 		goto out;
 	}
 	
-	result = get_period_from_file(bp->bp_period_file, &(bp->bp_period));
+	result = read_uint32_from_file(bp->bp_period_file, &(bp->bp_period));
 	if(result != BPRC_OK) {
 		goto out;
 	}
 	
-	result = get_polarity_from_file(bp->bp_polarity_file, &(bp->bp_polarity));
+	result = read_int8_from_file(bp->bp_polarity_file, &(bp->bp_polarity));
 	if(result != BPRC_OK) {
 		goto out;
 	}
@@ -436,20 +436,22 @@ bbb_pwm_is_claimed(struct bbb_pwm_t* bp)
  * @return A status code.
  */
 int 
-bbb_pwm_set_duty(struct bbb_pwm_t* bp, float duty)
+bbb_pwm_set_duty(struct bbb_pwm_t* bp, uint32_t duty_cycle)
 {
+	int result;
 	assert(bp != NULL);
 
 	if(!bbb_pwm_is_claimed(bp)) {
 		return BPRC_NOT_CLAIMED;
 	}
 
-	if(duty > 100 || duty < 0) {
-		return BPRC_RANGE;
+	result = write_uint32_to_file(bp->bp_duty_file, duty_cycle);
+	if(result != BPRC_OK) {
+		return result;
 	}
 
-	// TODO Write to the duty file.
-	return BPRC_NOT_IMPLEMENTED;
+	bp->bp_duty_cycle = duty_cycle;
+	return BPRC_OK;
 }
 
 /**
@@ -462,22 +464,22 @@ bbb_pwm_set_duty(struct bbb_pwm_t* bp, float duty)
  * @return A status code. 
  */
 int 
-bbb_pwm_set_period(struct bbb_pwm_t* bp, float period)
+bbb_pwm_set_period(struct bbb_pwm_t* bp, uint32_t period)
 {
+	int result;
 	assert(bp != NULL);
 
 	if(!bbb_pwm_is_claimed(bp)) {
 		return BPRC_NOT_CLAIMED;
 	}
 
-	if(period < 0) {
-		// TODO determin upper period limit.
-		return BPRC_RANGE;
+	result = write_uint32_to_file(bp->bp_period_file, period);
+	if(result != BPRC_OK) {
+		return result;
 	}
-
-	// TODO Write to the period file.
-	return BPRC_NOT_IMPLEMENTED;
-
+	
+	bp->bp_period = period;
+	return BPRC_OK;
 }
 
 /**
@@ -490,8 +492,9 @@ bbb_pwm_set_period(struct bbb_pwm_t* bp, float period)
  * @return A status code.
  */
 int 
-bbb_pwm_set_polarity(struct bbb_pwm_t* bp, int polarity)
+bbb_pwm_set_polarity(struct bbb_pwm_t* bp, int8_t polarity)
 {
+	int result;
 	assert(bp != NULL);
 
 	if(!bbb_pwm_is_claimed(bp)) {
@@ -503,22 +506,27 @@ bbb_pwm_set_polarity(struct bbb_pwm_t* bp, int polarity)
 		return BPRC_RANGE;
 	}
 
-	// TODO Write to the polarity file.
-	return BPRC_NOT_IMPLEMENTED;
+	result = write_uint32_to_file(bp->bp_polarity_file, polarity);
+	if(result != BPRC_OK) {
+		return result;
+	}
+
+	bp->bp_polarity = polarity;
+	return BPRC_OK;
 }
 
 /**
- * @brief Gets the duty of a pwm.
+ * @brief Gets the duty cycle of a pwm.
  * If the pwm isn't claimed, we attempt to open the right file for reading.
  * Note that this may fail if someone else owns it.
  *
  * @param bp The pwm to read from.
- * @param[out] out_duty THe duty read.
+ * @param[out] out_duty The duty cycle read.
  *
  * @return A status code.
  */
 int 
-bbb_pwm_get_duty(struct bbb_pwm_t* bp, float* out_duty)
+bbb_pwm_get_duty_cycle(struct bbb_pwm_t* bp, uint32_t* out_duty)
 {
 	FILE* duty_file = NULL;
 	int result = BPRC_OK;
@@ -527,7 +535,8 @@ bbb_pwm_get_duty(struct bbb_pwm_t* bp, float* out_duty)
 	assert(out_duty != NULL);
 
 	if(bbb_pwm_is_claimed(bp)) {
-		*out_duty = bp->bp_duty;
+		// Value was cached.
+		*out_duty = bp->bp_duty_cycle;
 		goto out;
 	}
 
@@ -537,7 +546,7 @@ bbb_pwm_get_duty(struct bbb_pwm_t* bp, float* out_duty)
 		goto out;
 	}
 	
-	result = get_duty_from_file(duty_file, out_duty);
+	result = read_uint32_from_file(duty_file, out_duty);
 out:
 	if(duty_file != NULL) {
 		fclose(duty_file);
@@ -556,7 +565,7 @@ out:
  * @return A status code.
  */
 int 
-bbb_pwm_get_period(struct bbb_pwm_t* bp, float* out_period)
+bbb_pwm_get_period(struct bbb_pwm_t* bp, uint32_t* out_period)
 {
 	FILE* period_file = NULL;
 	int result = BPRC_OK;
@@ -575,7 +584,7 @@ bbb_pwm_get_period(struct bbb_pwm_t* bp, float* out_period)
 		goto out;
 	}
 	
-	result = get_period_from_file(period_file, out_period);
+	result = read_uint32_from_file(period_file, out_period);
 out:
 	if(period_file != NULL) {
 		fclose(period_file);
@@ -594,7 +603,7 @@ out:
  * @return A status code.
  */
 int 
-bbb_pwm_get_polarity(struct bbb_pwm_t* bp, int* out_polarity)
+bbb_pwm_get_polarity(struct bbb_pwm_t* bp, int8_t* out_polarity)
 {
 	FILE* polarity_file = NULL;
 	int result = BPRC_OK;
@@ -613,7 +622,7 @@ bbb_pwm_get_polarity(struct bbb_pwm_t* bp, int* out_polarity)
 		goto out;
 	}
 
-	result = get_polarity_from_file(polarity_file, out_polarity);
+	result = read_int8_from_file(polarity_file, out_polarity);
 out:
 	if(polarity_file != NULL) {
 		fclose(polarity_file);
@@ -622,55 +631,95 @@ out:
 }
 
 /**
- * @brief Gets the duty of a pwm from a file.
+ * @brief 
  *
- * @param file The file to get the duty from.
- * @param[out] out_duty THe duty read.
+ * @param file
+ * @param out_data
  *
- * @return A status code. 
+ * @return 
+ */
+int 
+read_uint32_from_file(FILE* file, uint32_t* out_data)
+{
+	assert(out_data != NULL);
+	if(file == NULL) {
+		return BPRC_BAD_FILE;
+	}
+	//TODO Error checking
+
+	// Set to 0
+	fseek(file, 0, SEEK_SET);
+	// Read the data.	
+	fscanf(file, "%"PRIu32"", out_data);
+	return BPRC_OK;
+}
+
+/**
+ * @brief 
+ *
+ * @param file
+ * @param out_data
+ *
+ * @return 
+ */
+int 
+read_int8_from_file(FILE* file, int8_t* out_data)
+{
+	assert(out_data != NULL);
+	if(file == NULL) {
+		return BPRC_BAD_FILE;
+	}
+	//TODO Error Checking
+
+	// Set to 0
+	fseek(file, 0, SEEK_SET);
+	// Read the data.	
+	fscanf(file, "%"SCNd8"", out_data);
+	return BPRC_OK;
+}
+
+/**
+ * @brief 
+ *
+ * @param file
+ * @param data
+ *
+ * @return 
  */
 int
-get_duty_from_file(FILE* file, float* out_duty)
+write_uint32_to_file(FILE* file, uint32_t data)
 {
-	assert(out_duty != NULL);
 	if(file == NULL) {
 		return BPRC_BAD_FILE;
 	}
-	return BPRC_NOT_IMPLEMENTED;
+	//TODO: Error Checking
+
+	// Truncate the file.
+	ftruncate(fileno(file), 0);
+	// Write the data
+	fprintf(file, "%"PRIu32"", data);
+	return BPRC_OK;
 }
 
 /**
- * @brief Gets the period of a pwm from a file.
+ * @brief 
  *
- * @param file The file to get the polarity from.
- * @param[out] out_period The period read.
+ * @param file
+ * @param data
  *
- * @return A status code.
+ * @return 
  */
 int 
-get_period_from_file(FILE* file, float* out_period)
+write_int8_to_file(FILE* file, int8_t data)
 {
-	assert(out_period != NULL);
 	if(file == NULL) {
 		return BPRC_BAD_FILE;
 	}
-	return BPRC_NOT_IMPLEMENTED;
-}
+	//TODO: Error Checking
 
-/**
- * @brief Gets the polarity of a pwm from a file.
- *
- * @param file The file to get the polarity from.
- * @param[out] out_polarity The polarity read.
- *
- * @return A status code.
- */
-int 
-get_polarity_from_file(FILE* file, int* out_polarity)
-{
-	assert(out_polarity != NULL);
-	if(file == NULL) {
-		return BPRC_BAD_FILE;
-	}
-	return BPRC_NOT_IMPLEMENTED;
+	// Truncate the file.
+	ftruncate(fileno(file), 0);
+	// Write the data
+	fprintf(file, "%"PRId8"", data);
+	return BPRC_OK;
 }

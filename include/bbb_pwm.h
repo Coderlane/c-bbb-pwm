@@ -9,6 +9,8 @@
 #ifndef BBB_PWM_H
 #define BBB_PWM_H
 
+#include <stdint.h>
+
 enum bbb_pwm_state_e {
 	/**
 	 * @brief The pwm is unclaimed.
@@ -48,12 +50,13 @@ int bbb_pwm_unclaim(struct bbb_pwm_t* bp);
 int bbb_pwm_is_unclaimed(struct bbb_pwm_t* bp);
 int bbb_pwm_is_claimed(struct bbb_pwm_t* bp);
 
-int bbb_pwm_set_duty(struct bbb_pwm_t* bp, float duty);
-int bbb_pwm_set_period(struct bbb_pwm_t* bp, float period);
-int bbb_pwm_set_polarity(struct bbb_pwm_t* bp, int polarity);
+// TODO add duty percent and frequency getters and setters.
+int bbb_pwm_set_duty_cycle(struct bbb_pwm_t* bp, uint32_t duty);
+int bbb_pwm_set_period(struct bbb_pwm_t* bp, uint32_t period);
+int bbb_pwm_set_polarity(struct bbb_pwm_t* bp, int8_t polarity);
 
-int bbb_pwm_get_duty(struct bbb_pwm_t* bp, float* out_duty);
-int bbb_pwm_get_period(struct bbb_pwm_t* bp, float* out_period);
-int bbb_pwm_get_polarity(struct bbb_pwm_t* bp, int* out_polarity);
+int bbb_pwm_get_duty_cycle(struct bbb_pwm_t* bp, uint32_t* out_duty);
+int bbb_pwm_get_period(struct bbb_pwm_t* bp, uint32_t* out_period);
+int bbb_pwm_get_polarity(struct bbb_pwm_t* bp, int8_t* out_polarity);
 
 #endif
