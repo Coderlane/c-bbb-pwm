@@ -24,13 +24,13 @@ test_order()
 	ctrl = calloc(sizeof(struct bbb_pwm_controller_t), 1);
 	assert(ctrl != NULL);
 
-	cur = bbb_pwm_new("a");
+	cur = bbb_pwm_new("a", "");
 	assert(bbb_pwm_controller_add_pwm(ctrl, cur) == BPRC_OK);
 
-	cur = bbb_pwm_new("b");
+	cur = bbb_pwm_new("b", "");
 	assert(bbb_pwm_controller_add_pwm(ctrl, cur) == BPRC_OK);
 
-	cur = bbb_pwm_new("c");
+	cur = bbb_pwm_new("c", "");
 	assert(bbb_pwm_controller_add_pwm(ctrl, cur) == BPRC_OK);
 
 	cur = ctrl->bpc_head_pwm;

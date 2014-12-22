@@ -10,6 +10,8 @@
 #ifndef BBB_PWM_INTERNAL_H
 #define BBB_PWM_INTERNAL_H
 
+#define _GNU_SOURCE
+
 #include <bbb_pwm.h>
 #include <bbb_capemgr.h>
 
@@ -20,7 +22,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-
 
 /**
  * @brief Represents a detected pwm.
@@ -117,7 +118,7 @@ int bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
 	 	const char* name);
 int bbb_pwm_controller_probe(struct bbb_pwm_controller_t* bpc);
 
-struct bbb_pwm_t* bbb_pwm_new(const char* name);
+struct bbb_pwm_t* bbb_pwm_new(const char* name, const char* root_path);
 void bbb_pwm_delete(struct bbb_pwm_t** bp_ptr);
 
 int get_duty_from_file(FILE* file, float* out_duty);

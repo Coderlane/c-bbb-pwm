@@ -243,7 +243,7 @@ bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
  * @return A new pwm or NULL on failure.
  */
 struct bbb_pwm_t*
-bbb_pwm_new(const char* name) 
+bbb_pwm_new(const char* name, const char* root_path) 
 {
 	struct bbb_pwm_t* bp;
 	if(name == NULL) {
@@ -255,6 +255,11 @@ bbb_pwm_new(const char* name)
 
 	bp->bp_state = BPS_UNCLAIMED;
 	bp->bp_name = (char*) strdup(name);
+
+	asprintf(&(bp->bp_duty_file_path), "%s/%s", root_path, "duty");
+	asprintf(&(bp->bp_period_file_path), "%s/%s", root_path, "period");
+	asprintf(&(bp->bp_polarity_file_path), "%s/%s", root_path, "polarity");
+	
 	assert(bp->bp_name != NULL);
 
 	return bp;
