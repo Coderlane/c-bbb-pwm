@@ -646,7 +646,6 @@ read_uint32_from_file(FILE* file, uint32_t* out_data)
 		return BPRC_BAD_FILE;
 	}
 	//TODO Error checking
-
 	// Set to 0
 	fseek(file, 0, SEEK_SET);
 	// Read the data.	
@@ -670,7 +669,6 @@ read_int8_from_file(FILE* file, int8_t* out_data)
 		return BPRC_BAD_FILE;
 	}
 	//TODO Error Checking
-
 	// Set to 0
 	fseek(file, 0, SEEK_SET);
 	// Read the data.	
@@ -693,9 +691,8 @@ write_uint32_to_file(FILE* file, uint32_t data)
 		return BPRC_BAD_FILE;
 	}
 	//TODO: Error Checking
-
 	// Truncate the file.
-	ftruncate(fileno(file), 0);
+	freopen(NULL, "w+", file);
 	// Write the data
 	fprintf(file, "%"PRIu32"", data);
 	return BPRC_OK;
@@ -716,9 +713,8 @@ write_int8_to_file(FILE* file, int8_t data)
 		return BPRC_BAD_FILE;
 	}
 	//TODO: Error Checking
-
 	// Truncate the file.
-	ftruncate(fileno(file), 0);
+	freopen(NULL, "w+", file);
 	// Write the data
 	fprintf(file, "%"PRId8"", data);
 	return BPRC_OK;
