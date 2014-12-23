@@ -4,7 +4,7 @@ compiler:
   - clang
 
 before_script:
-  - sudo add-apt-repository --yes ppa:smspillaz/cmake-2.8.12 
+  - sudo add-apt-repository --yes ppa:kalakris/cmake
   - sudo apt-get update
   - sudo apt-get install pkg-config libudev-dev cmake
   - cmake --version
