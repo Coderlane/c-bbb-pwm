@@ -1,0 +1,12 @@
+language: c
+
+compiler:
+  - clang
+
+before_script:
+  - sudo apt-get install pkg-config libudev-dev
+  - mkdir build
+  - cd build
+  - cmake -DCMAKE_BUILD_TYPE=Debug ..
+
+script: make && make test
