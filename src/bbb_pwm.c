@@ -706,7 +706,7 @@ write_uint32_to_file(FILE* file, uint32_t data)
 	}
 	//TODO: Error Checking
 	// Truncate the file.
-	if(freopen(NULL, "r+", file) == NULL) {
+	if(freopen(NULL, "w+", file) == NULL) {
 		return BPRC_BAD_FILE;
 	}
 	// Write the data
@@ -734,7 +734,8 @@ write_int8_to_file(FILE* file, int8_t data)
 	}
 	//TODO: Error Checking
 	// Truncate the file.
-	if(freopen(NULL, "r+", file) == NULL) {
+
+	if(freopen(NULL, "w+", file) == NULL) {
 		return BPRC_BAD_FILE;
 	}
 	// Write the data
