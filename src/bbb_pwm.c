@@ -327,19 +327,19 @@ bbb_pwm_claim(struct bbb_pwm_t* bp)
 	assert(bp->bp_polarity_file_path != NULL);
 
 	// Open the necessary files.
-	bp->bp_duty_file = fopen(bp->bp_duty_file_path, "w+");
+	bp->bp_duty_file = fopen(bp->bp_duty_file_path, "r+");
 	if(bp->bp_duty_file == NULL) {
 		result = BPRC_BUSY;
 		goto out;
 	}
 	
-	bp->bp_period_file = fopen(bp->bp_period_file_path, "w+");
+	bp->bp_period_file = fopen(bp->bp_period_file_path, "r+");
 	if(bp->bp_period_file == NULL) {
 		result = BPRC_BUSY;
 		goto out;
 	}
 	
-	bp->bp_polarity_file = fopen(bp->bp_polarity_file_path, "w+");
+	bp->bp_polarity_file = fopen(bp->bp_polarity_file_path, "r+");
 	if(bp->bp_polarity_file == NULL) {
 		result = BPRC_BUSY;
 		goto out;
@@ -706,7 +706,7 @@ write_uint32_to_file(FILE* file, uint32_t data)
 	}
 	//TODO: Error Checking
 	// Truncate the file.
-	if(freopen(NULL, "w+", file) == NULL) {
+	if(freopen(NULL, "r+", file) == NULL) {
 		return BPRC_BAD_FILE;
 	}
 	// Write the data
@@ -734,7 +734,7 @@ write_int8_to_file(FILE* file, int8_t data)
 	}
 	//TODO: Error Checking
 	// Truncate the file.
-	if(freopen(NULL, "w+", file) == NULL) {
+	if(freopen(NULL, "r+", file) == NULL) {
 		return BPRC_BAD_FILE;
 	}
 	// Write the data
