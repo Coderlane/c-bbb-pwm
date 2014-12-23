@@ -73,14 +73,20 @@ bbb_pwm_controller_delete(struct bbb_pwm_controller_t **bpc_ptr)
 int
 bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc)
 {
+	// Create a new bbb_capemgr to talk to the capemanager.
 	bpc->bpc_capemgr = bbb_capemgr_new();
 	if(bpc->bpc_capemgr == NULL) {
 		return BPRC_NO_CAPEMGR;
 	}	
-
+	
+	// Enable the am33xx pwm controller on the cape manager.
 	if(bbb_capemgr_enable(bpc->bpc_capemgr, "am33xx_pwm") < 0) {
 		return BPRC_NO_PWM;
 	}
+
+	// Probing can fail and it isn't the end of the world.
+	// Maybe emit a warning?
+	bbb_pwm_controller_probe(bpc);
 
 	return BPRC_OK;
 }
@@ -95,9 +101,8 @@ bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc)
 int 
 bbb_pwm_controller_probe(struct bbb_pwm_controller_t* bpc)
 {
-
 	assert(bpc != NULL);
-	
+	// TODO: Implement probing for pwms on the local filesystem.	
 	return BPRC_NOT_IMPLEMENTED;
 }
 
@@ -119,6 +124,7 @@ bbb_pwm_controller_add_pwm(struct bbb_pwm_controller_t* bpc,
 	assert(bpc != NULL);
 	assert(bp != NULL);
 
+	// Linked list insert in order.
 	cur = bpc->bpc_head_pwm;
 	if(cur == NULL) {
 		// New list.
@@ -126,6 +132,7 @@ bbb_pwm_controller_add_pwm(struct bbb_pwm_controller_t* bpc,
 		return BPRC_OK;
 	}
 
+	// Do our compare.
 	result = strcmp(bp->bp_name, cur->bp_name);
 
 	if(result == 0) {
@@ -140,7 +147,10 @@ bbb_pwm_controller_add_pwm(struct bbb_pwm_controller_t* bpc,
 		return BPRC_OK;
 	}
 
+	// Not front or dupe, thus we must search!
 	while(cur->bp_next != NULL) {
+		// Do our compare.
+		// Note we compare on the NEXT element.
 		result = strcmp(bp->bp_name, cur->bp_next->bp_name);
 
 		if(result == 0) {
@@ -154,10 +164,10 @@ bbb_pwm_controller_add_pwm(struct bbb_pwm_controller_t* bpc,
 			cur->bp_next = bp;
 			return BPRC_OK;
 		}
-		// Increment cur.
+		// This is not the pointer you were looking for.
 		cur = cur->bp_next;
 	}
-	// Insert at end.
+	// If hit the end and we still haven't found our place, insert at end.
 	cur->bp_next = bp;
 	return BPRC_OK;
 }
@@ -181,11 +191,15 @@ bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
 	assert(bpc != NULL);
 	assert(name != NULL);
 
+	// Remove from a sorted list
+
 	cur = bpc->bpc_head_pwm;
 	if(cur == NULL) {
+		// Empty list.
 		return BPRC_PWM_NOT_FOUND;
 	}
 
+	// Do our compare
 	result = strcmp(cur->bp_name, name);
 
 	if(result == 0) {
@@ -201,12 +215,13 @@ bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
 	}
 
 	if(result > 0) {
+		// Item can't possibly be in our list.
 		return BPRC_PWM_NOT_FOUND;
 	}
 
 	while(cur->bp_next != NULL) {
+		// Do our compare.
 		result = strcmp(cur->bp_next->bp_name, name);
-
 		if(result == 0) {
 			// Found our target.
 			struct bbb_pwm_t* tmp = cur->bp_next;
@@ -225,6 +240,7 @@ bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
 		}
 
 		if(result > 0) {
+			// Item can't possibly be in our list.
 			return BPRC_PWM_NOT_FOUND;
 		}
 		// Move on.
@@ -232,6 +248,7 @@ bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
 		assert(cur != NULL);
 	}
 
+	// We are at the end and didn't find anything.
 	return BPRC_PWM_NOT_FOUND;
 }
 
@@ -530,6 +547,36 @@ bbb_pwm_set_polarity(struct bbb_pwm_t* bp, int8_t polarity)
 
 	bp->bp_polarity = polarity;
 	return BPRC_OK;
+}
+
+/**
+ * @brief 
+ *
+ * @param bp
+ * @param percent
+ *
+ * @return 
+ */
+int 
+bbb_pwm_set_duty_percent(struct bbb_pwm_t* bp, float percent)
+{
+	//TODO implement this function.
+	return BPRC_NOT_IMPLEMENTED;
+}
+
+/**
+ * @brief
+ *
+ * @param bp
+ * @param mega_hertz
+ *
+ * @return 
+ */
+int 
+bbb_pwm_set_frequency(struct bbb_pwm_t* bp, float mega_hertz)
+{
+	//TODO implement this function.
+	return BPRC_NOT_IMPLEMENTED;
 }
 
 /**
