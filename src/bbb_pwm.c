@@ -641,15 +641,21 @@ out:
 int 
 read_uint32_from_file(FILE* file, uint32_t* out_data)
 {
-	assert(out_data != NULL);
-	if(file == NULL) {
-		return BPRC_BAD_FILE;
+	int result;
+	if(file == NULL || out_data == NULL) {
+		return BPRC_NULL_PTR;
 	}
 	//TODO Error checking
 	// Set to 0
-	fseek(file, 0, SEEK_SET);
+	result = fseek(file, 0, SEEK_SET);
+	if(result != 0) {
+		return BPRC_BAD_FILE;
+	}
 	// Read the data.	
-	fscanf(file, "%"PRIu32"", out_data);
+	result = fscanf(file, "%"PRIu32"", out_data);
+	if(result < 0) {
+		return BPRC_NO_DATA;
+	}
 	return BPRC_OK;
 }
 
@@ -664,15 +670,20 @@ read_uint32_from_file(FILE* file, uint32_t* out_data)
 int 
 read_int8_from_file(FILE* file, int8_t* out_data)
 {
-	assert(out_data != NULL);
-	if(file == NULL) {
+	int result;
+	if(file == NULL || out_data == NULL) {
+		return BPRC_NULL_PTR;
+	}
+	// Set to 0
+	result = fseek(file, 0, SEEK_SET);
+	if(result != 0) {
 		return BPRC_BAD_FILE;
 	}
-	//TODO Error Checking
-	// Set to 0
-	fseek(file, 0, SEEK_SET);
 	// Read the data.	
-	fscanf(file, "%"SCNd8"", out_data);
+	result = fscanf(file, "%"SCNd8"", out_data);
+	if(result < 0) {
+		return BPRC_NO_DATA;
+	}
 	return BPRC_OK;
 }
 
@@ -687,14 +698,20 @@ read_int8_from_file(FILE* file, int8_t* out_data)
 int
 write_uint32_to_file(FILE* file, uint32_t data)
 {
+	int result;
 	if(file == NULL) {
 		return BPRC_BAD_FILE;
 	}
 	//TODO: Error Checking
 	// Truncate the file.
-	freopen(NULL, "w+", file);
+	if(freopen(NULL, "w+", file) == NULL) {
+		return BPRC_BAD_FILE;
+	}
 	// Write the data
-	fprintf(file, "%"PRIu32"", data);
+	result = fprintf(file, "%"PRIu32"", data);
+	if(result < 0) {
+		return BPRC_BAD_WRITE;
+	}
 	return BPRC_OK;
 }
 
@@ -709,13 +726,19 @@ write_uint32_to_file(FILE* file, uint32_t data)
 int 
 write_int8_to_file(FILE* file, int8_t data)
 {
+	int result;
 	if(file == NULL) {
 		return BPRC_BAD_FILE;
 	}
 	//TODO: Error Checking
 	// Truncate the file.
-	freopen(NULL, "w+", file);
+	if(freopen(NULL, "w+", file) == NULL) {
+		return BPRC_BAD_FILE;
+	}
 	// Write the data
-	fprintf(file, "%"PRId8"", data);
+	result = fprintf(file, "%"PRId8"", data);
+	if(result < 0) {
+		return BPRC_BAD_WRITE;	
+	}
 	return BPRC_OK;
 }

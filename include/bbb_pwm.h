@@ -25,6 +25,8 @@ enum bbb_pwm_state_e {
 
 enum bbb_pwm_return_code_e {
 	BPRC_NOT_IMPLEMENTED = -100,
+	BPRC_BAD_WRITE = -59,
+	BPRC_NULL_PTR = -58,
 	BPRC_BAD_FILE = -57,
 	BPRC_RANGE = -56,
 	BPRC_NOT_CLAIMED = -55,
@@ -33,6 +35,7 @@ enum bbb_pwm_return_code_e {
 	BPRC_DUPLICATE = -52,
 	BPRC_NO_PWM = -51,
 	BPRC_NO_CAPEMGR = -50,
+	BPRC_NO_DATA = -4,
 	BPRC_NO_MEM = -3,
 	BPRC_ERROR = -2,
 	BPRC_OK = 0
