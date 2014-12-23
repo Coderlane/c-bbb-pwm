@@ -322,6 +322,12 @@ bbb_pwm_claim(struct bbb_pwm_t* bp)
 	int result = BPRC_OK;
 
 	assert(bp != NULL);
+
+	if(bbb_pwm_is_claimed(bp)) {
+		// We already claimed it.
+		return BPRC_OK;
+	}
+
 	assert(bp->bp_duty_file_path != NULL);
 	assert(bp->bp_period_file_path != NULL);
 	assert(bp->bp_polarity_file_path != NULL);
@@ -365,6 +371,8 @@ out:
 	if(result != BPRC_OK) {
 		// On failure, unclaim will force a cleanup.
 		bbb_pwm_unclaim(bp);
+	} else {
+		bp->bp_state = BPS_CLAIMED;
 	}
 	return result;
 }
@@ -438,15 +446,22 @@ bbb_pwm_is_claimed(struct bbb_pwm_t* bp)
  * @return A status code.
  */
 int 
-bbb_pwm_set_duty(struct bbb_pwm_t* bp, uint32_t duty_cycle)
+bbb_pwm_set_duty_cycle(struct bbb_pwm_t* bp, uint32_t duty_cycle)
 {
 	int result;
 	assert(bp != NULL);
 
 	if(!bbb_pwm_is_claimed(bp)) {
+		printf("unclaimed\n");
 		return BPRC_NOT_CLAIMED;
 	}
 
+	// Only allow up to 100%.
+	if(duty_cycle > 100) {
+		return BPRC_RANGE;
+	}
+
+	// Write the data.
 	result = write_uint32_to_file(bp->bp_duty_file, duty_cycle);
 	if(result != BPRC_OK) {
 		return result;
@@ -503,7 +518,7 @@ bbb_pwm_set_polarity(struct bbb_pwm_t* bp, int8_t polarity)
 		return BPRC_NOT_CLAIMED;
 	}
 
-	if(polarity < -1 || polarity > 1) {
+	if(polarity != -1 && polarity != 1) {
 		// TODO Verify these limits.
 		return BPRC_RANGE;
 	}
