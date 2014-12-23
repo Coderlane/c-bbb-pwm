@@ -1,6 +1,6 @@
 /**
  * @file test_pwm_control.c
- * @brief 
+ * @brief Test the pwm controls. 
  * @author Travis Lane
  * @version 
  * @date 2014-12-22
@@ -29,7 +29,7 @@ void test_invalid_get_period();
 void test_invalid_get_polarity();
 
 struct bbb_pwm_t* bbb_pwm_test_new(const char* name, 
-		int touch_files, int init_files);
+		int create_files, int init_files);
 void bbb_pwm_test_delete(struct bbb_pwm_t** bp_ptr);
 
 int 
@@ -47,9 +47,12 @@ main()
 	test_invalid_get_period();
 	test_invalid_get_polarity();
 
-	
+	return 0;
 }
 
+/**
+ * @brief Test setting and getting valid duty cycles.
+ */
 void
 test_set_get_duty_cycle()
 {
@@ -72,9 +75,11 @@ test_set_get_duty_cycle()
 	expect_eq(duty, 10);
 
 	bbb_pwm_test_delete(&bp);
-	
 }
 
+/**
+ * @brief Test setting then getting valid periods.
+ */
 void
 test_set_get_period()
 {
@@ -97,9 +102,11 @@ test_set_get_period()
 	expect_eq(period, 10);
 
 	bbb_pwm_test_delete(&bp);
-	
 }
 
+/**
+ * @brief Test setting and getting valid polarities.
+ */
 void
 test_set_get_polarity()
 {
@@ -118,9 +125,11 @@ test_set_get_polarity()
 	expect_eq(polarity, -1);
 
 	bbb_pwm_test_delete(&bp);
-	
 }
 
+/**
+ * @brief Test setting an invalid duty cycle.
+ */
 void
 test_invalid_set_duty_cycle()
 {
@@ -135,9 +144,11 @@ test_invalid_set_duty_cycle()
 	expect_neq(bbb_pwm_set_duty_cycle(bp, 101), BPRC_OK);
 
 	bbb_pwm_test_delete(&bp);
-	
 }
 
+/**
+ * @brief Test setting an invalid period.
+ */
 void 
 test_invalid_set_period()
 {
@@ -149,9 +160,11 @@ test_invalid_set_period()
 	expect_eq(bbb_pwm_claim(bp), BPRC_OK);
 
 	bbb_pwm_test_delete(&bp);
-	
 }
 
+/**
+ * @brief Test setting an invalid polarity.
+ */
 void 
 test_invalid_set_polarity()
 {
@@ -170,9 +183,11 @@ test_invalid_set_polarity()
 	expect_neq(bbb_pwm_set_polarity(bp, 0), BPRC_OK);
 
 	bbb_pwm_test_delete(&bp);
-	
 }
 
+/**
+ * @brief Test getting from an invalid duty cycle file.
+ */
 void 
 test_invalid_get_duty_cycle()
 {
@@ -180,12 +195,15 @@ test_invalid_get_duty_cycle()
 	struct bbb_pwm_t* bp;
 	bp = bbb_pwm_test_new("test_invalid_set_duty_cycle", 1, 0);
 
-	// Didn't claim, which is ok, but bad data.
+	// Didn't claim, which is ok, but no data.
 	expect_neq(bbb_pwm_get_duty_cycle(bp, &duty), BPRC_OK);
 	
 	bbb_pwm_test_delete(&bp);
 }
 
+/**
+ * @brief Test getting from an invalid period file.
+ */
 void 
 test_invalid_get_period()
 {
@@ -193,12 +211,15 @@ test_invalid_get_period()
 	struct bbb_pwm_t* bp;
 	bp = bbb_pwm_test_new("test_invalid_set_period", 1, 0);
 
-	// Didn't claim, which is ok, but bad data.
+	// Didn't claim, which is ok, but no data.
 	expect_neq(bbb_pwm_get_period(bp, &period), BPRC_OK);
 	
 	bbb_pwm_test_delete(&bp);
 }
 
+/**
+ * @brief Test getting from an invalid polarity file.
+ */
 void 
 test_invalid_get_polarity()
 {
@@ -206,23 +227,23 @@ test_invalid_get_polarity()
 	struct bbb_pwm_t* bp;
 	bp = bbb_pwm_test_new("test_invalid_set_polarity", 1, 0);
 
-	// Didn't claim, which is ok, but bad data.
+	// Didn't claim, which is ok, but no data.
 	expect_neq(bbb_pwm_get_polarity(bp, &polarity), BPRC_OK);
 	
 	bbb_pwm_test_delete(&bp);
 }
 
 /**
- * @brief 
+ * @brief Create a new test pwm and associated files.
  *
- * @param name
- * @param touch_files
- * @param init_files
+ * @param name The name of the new pwm.
+ * @param create_files Should we create the pwm's files. 
+ * @param init_files Should we initialize the created files.
  *
- * @return 
+ * @return A new bbb_pwm_t* on success, NULL on failure.
  */
 struct bbb_pwm_t*
-bbb_pwm_test_new(const char* name, int touch_files, int init_files)
+bbb_pwm_test_new(const char* name, int create_files, int init_files)
 {
 	struct bbb_pwm_t* bp;
 	char path[1024];
@@ -235,7 +256,7 @@ bbb_pwm_test_new(const char* name, int touch_files, int init_files)
 	bp = bbb_pwm_new(name, path);
 	assert(bp != NULL);
 	
-	if(touch_files) {
+	if(create_files) {
 		FILE *fp;
 		
 		// Touch the duty file and init if necessary.
@@ -267,9 +288,9 @@ bbb_pwm_test_new(const char* name, int touch_files, int init_files)
 }
 
 /**
- * @brief 
+ * @brief Delete a test pwm and remove related files. 
  *
- * @param bp_ptr
+ * @param bp_ptr The pwm to delete.
  */
 void
 bbb_pwm_test_delete(struct bbb_pwm_t** bp_ptr)
