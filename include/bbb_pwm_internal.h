@@ -129,4 +129,4 @@ int read_int8_from_file(FILE* file, int8_t* out_data);
 int write_uint32_to_file(FILE* file, uint32_t data);
 int write_int8_to_file(FILE* file, int8_t data);
 
-#endif
+#endif /* BBB_PWM_INTERNAL_H */

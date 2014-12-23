@@ -1,3 +1,10 @@
+/**
+ * @file test_file_io.c
+ * @brief Tests for the basic file IO under the hood.
+ * @author Travis Lane
+ * @version 
+ * @date 2014-12-22
+ */
 
 #include <bbb_pwm_internal.h>
 
@@ -41,6 +48,9 @@ main()
 	test_invalid_w_int8();
 }
 
+/**
+ * @brief Test valid read/writes of an uint32
+ */
 void 
 test_rw_uint32()
 {
@@ -61,6 +71,9 @@ test_rw_uint32()
 	test_file_delete(&tf);
 }
 
+/**
+ * @brief Test valid read/writes of an int8
+ */
 void 
 test_rw_int8()
 {
@@ -86,7 +99,9 @@ test_rw_int8()
 	test_file_delete(&tf);
 }
 
-
+/**
+ * @brief Test invalid reads of a uint32
+ */
 void 
 test_invalid_r_uint32()
 {
@@ -104,6 +119,9 @@ test_invalid_r_uint32()
 	test_file_delete(&tf);
 }
 
+/**
+ * @brief Test invalid reads of a int8
+ */
 void 
 test_invalid_r_int8()
 {
@@ -121,6 +139,9 @@ test_invalid_r_int8()
 	test_file_delete(&tf);
 }
 
+/**
+ * @brief Test invalid writes of a uint32
+ */
 void 
 test_invalid_w_uint32()
 {
@@ -136,6 +157,9 @@ test_invalid_w_uint32()
 	//test_file_delete(&tf);
 }
 
+/**
+ * @brief Test invalid writes of an int8
+ */
 void 
 test_invalid_w_int8()
 {
@@ -152,12 +176,12 @@ test_invalid_w_int8()
 }
 
 /**
- * @brief 
+ * @brief Creates a new test file and opens it.
  *
- * @param name
- * @param mode
+ * @param name The name of the file to create.
+ * @param mode The mode to create the file in.
  *
- * @return 
+ * @return NULL on failure or a valid pointer.
  */
 struct test_file* 
 test_file_new(const char* name, const char* mode)
@@ -188,9 +212,9 @@ test_file_new(const char* name, const char* mode)
 }
 
 /**
- * @brief 
+ * @brief Deletes a test file. 
  *
- * @param tfp
+ * @param tfp A pinter to a test file.
  */
 void 
 test_file_delete(struct test_file** tfp)

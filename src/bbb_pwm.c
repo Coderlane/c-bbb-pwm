@@ -253,9 +253,11 @@ bbb_pwm_new(const char* name, const char* root_path)
 	bp = calloc(sizeof(struct bbb_pwm_t), 1);
 	assert(bp != NULL);
 
+	// Initially we are unclaimed.
 	bp->bp_state = BPS_UNCLAIMED;
+	// Copy the name
 	bp->bp_name = (char*) strdup(name);
-
+	// Setup our paths.
 	asprintf(&(bp->bp_duty_file_path), "%s/%s", root_path, "duty");
 	asprintf(&(bp->bp_period_file_path), "%s/%s", root_path, "period");
 	asprintf(&(bp->bp_polarity_file_path), "%s/%s", root_path, "polarity");

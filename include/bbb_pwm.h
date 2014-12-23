@@ -62,4 +62,4 @@ int bbb_pwm_get_duty_cycle(struct bbb_pwm_t* bp, uint32_t* out_duty);
 int bbb_pwm_get_period(struct bbb_pwm_t* bp, uint32_t* out_period);
 int bbb_pwm_get_polarity(struct bbb_pwm_t* bp, int8_t* out_polarity);
 
-#endif
+#endif /* BBB_PWM_H */
