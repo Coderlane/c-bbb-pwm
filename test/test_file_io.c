@@ -13,6 +13,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+void test_can_write();
+void test_can_read();
 
 void test_rw_uint32();
 void test_rw_int8();
@@ -38,6 +43,9 @@ struct test_file {
 int 
 main() 
 {
+	test_can_read();
+	test_can_write();
+
 	test_rw_int8();
 	test_rw_uint32();
 	
@@ -48,6 +56,42 @@ main()
 	test_invalid_w_int8();
 }
 
+void
+test_can_write()
+{
+	struct test_file* tf;
+
+	tf = test_file_new("/can_write_w.txt", "w");
+	assert(can_write_to_file(tf->tf_fp));
+	test_file_delete(&tf);
+	
+	tf = test_file_new("/can_write_w+.txt", "w+");
+	assert(can_write_to_file(tf->tf_fp));
+	test_file_delete(&tf);
+	
+	tf = test_file_new("/can_write_r.txt", "r");
+	assert(!can_write_to_file(tf->tf_fp));
+	test_file_delete(&tf);
+}
+
+void
+test_can_read()
+{
+	struct test_file* tf;
+	
+	tf = test_file_new("/can_read_r.txt", "r");
+	assert(can_read_from_file(tf->tf_fp));
+	test_file_delete(&tf);
+
+	tf = test_file_new("/can_read_w+.txt", "w+");
+	assert(can_read_from_file(tf->tf_fp));
+	test_file_delete(&tf);
+
+	tf = test_file_new("/can_read_w.txt", "w");
+	assert(!can_read_from_file(tf->tf_fp));
+	test_file_delete(&tf);
+}
+
 /**
  * @brief Test valid read/writes of an uint32
  */
@@ -56,7 +100,7 @@ test_rw_uint32()
 {
 	uint32_t data = 0;
 	struct test_file* tf;
-	tf = test_file_new("/uint32.txt", "w+");
+	tf = test_file_new("/rw_uint32.txt", "w+");
 
 	write_uint32_to_file(tf->tf_fp, UINT32_MAX);
 	read_uint32_from_file(tf->tf_fp, &data);
@@ -79,21 +123,18 @@ test_rw_int8()
 {
 	int8_t data = 0;
 	struct test_file* tf;
-	tf = test_file_new("/int8.txt", "w+");
+	tf = test_file_new("/rw_int8.txt", "w+");
 
 	write_int8_to_file(tf->tf_fp, INT8_MIN);
 	read_int8_from_file(tf->tf_fp, &data);
-	fprintf(stderr, "Written: %d Read: %d\n", INT8_MIN, data);
 	assert(data == INT8_MIN);
 
 	write_int8_to_file(tf->tf_fp, INT8_MAX);
 	read_int8_from_file(tf->tf_fp, &data);
-	fprintf(stderr, "Written: %d Read: %d\n", INT8_MAX, data);
 	assert(data == INT8_MAX);
 
 	write_int8_to_file(tf->tf_fp, 0);
 	read_int8_from_file(tf->tf_fp, &data);
-	fprintf(stderr, "Written: %d Read: %d\n", 0, data);
 	assert(data == 0);
 
 	test_file_delete(&tf);
@@ -107,7 +148,7 @@ test_invalid_r_uint32()
 {
 	uint32_t data = 0;
 	struct test_file* tf;
-	tf = test_file_new("/uint32.txt", "w+");
+	tf = test_file_new("/ir_uint32.txt", "w+");
 
 	// Test NULL ptrs.
 	assert(read_uint32_from_file(NULL, &data) != BPRC_OK); 
@@ -127,7 +168,7 @@ test_invalid_r_int8()
 {
 	int8_t data = 0;
 	struct test_file* tf;
-	tf = test_file_new("/int8.txt", "w+");
+	tf = test_file_new("/ir_int8.txt", "w+");
 
 	// Test NULL ptrs.
 	assert(read_int8_from_file(NULL, &data) != BPRC_OK); 
@@ -145,16 +186,16 @@ test_invalid_r_int8()
 void 
 test_invalid_w_uint32()
 {
-	//struct test_file* tf;
-	//tf = test_file_new("/uint32.txt", "r");
+	struct test_file* tf;
+	tf = test_file_new("/iw_uint32.txt", "r");
 
 	// Test NULL ptr.
 	assert(write_uint32_to_file(NULL, 0) != BPRC_OK);
 
 	// Test write to read only file.
-	//assert(write_uint32_to_file(tf->tf_fp, 0) != BPRC_OK);
+	assert(write_uint32_to_file(tf->tf_fp, 0) != BPRC_OK);
 
-	//test_file_delete(&tf);
+	test_file_delete(&tf);
 }
 
 /**
@@ -163,16 +204,16 @@ test_invalid_w_uint32()
 void 
 test_invalid_w_int8()
 {
-	//struct test_file* tf;
-	//tf = test_file_new("/int8.txt", "r");
+	struct test_file* tf;
+	tf = test_file_new("/iw_int8.txt", "r");
 
 	// Test NULL ptr.
 	assert(write_int8_to_file(NULL, 0) != BPRC_OK);
 
 	// Test write to read only file.
-	//assert(write_int8_to_file(tf->tf_fp, 0) != BPRC_OK);
+	assert(write_int8_to_file(tf->tf_fp, 0) != BPRC_OK);
 
-	//test_file_delete(&tf);
+	test_file_delete(&tf);
 }
 
 /**
@@ -186,6 +227,7 @@ test_invalid_w_int8()
 struct test_file* 
 test_file_new(const char* name, const char* mode)
 {
+	int fd;
 	struct test_file* tf;
  
 	assert(name != NULL);
@@ -203,9 +245,17 @@ test_file_new(const char* name, const char* mode)
 	strcat(tf->tf_path, name);
 	
 	tf->tf_mode = mode;
-	fprintf(stderr, "File: %s Mode: %s\n", tf->tf_path, tf->tf_mode);
-	tf->tf_fp = fopen(tf->tf_path, tf->tf_mode);
+	
+	// Touch the file.	
+	fd = open(tf->tf_path,
+			O_WRONLY | O_CREAT | O_NOCTTY | O_NONBLOCK, 0666);
+	assert(fd > 0);
+	close(fd);
 
+	printf("File: %s Mode: %s\n", tf->tf_path, tf->tf_mode);
+
+	// Actually open the file.
+	tf->tf_fp = fopen(tf->tf_path, tf->tf_mode);
 	assert(tf->tf_fp != NULL);
 
 	return tf;

@@ -636,6 +636,54 @@ out:
  * @brief 
  *
  * @param file
+ *
+ * @return 
+ */
+int 
+can_write_to_file(FILE* file)
+{
+	int fd, mode;
+	if(file == NULL) {
+		return 0;
+	}
+
+	fd = fileno(file);
+	if(fd < 0) {
+		return 0;
+	}
+
+	mode = fcntl(fd, F_GETFL); 
+	return ((mode & O_WRONLY) == O_WRONLY) || ((mode & O_RDWR) == O_RDWR);
+}
+
+/**
+ * @brief 
+ *
+ * @param file
+ *
+ * @return 
+ */
+int 
+can_read_from_file(FILE* file)
+{
+	int fd, mode;
+	if(file == NULL) {
+		return 0;
+	}
+
+	fd = fileno(file);
+	if(fd < 0) {
+		return 0;
+	}
+
+	mode = fcntl(fd, F_GETFL);
+	return ((mode & O_WRONLY) != O_WRONLY) || ((mode & O_RDWR) == O_RDWR);
+}
+
+/**
+ * @brief 
+ *
+ * @param file
  * @param out_data
  *
  * @return 
@@ -647,7 +695,9 @@ read_uint32_from_file(FILE* file, uint32_t* out_data)
 	if(file == NULL || out_data == NULL) {
 		return BPRC_NULL_PTR;
 	}
-	//TODO Error checking
+	if(!can_read_from_file(file)) {
+		return BPRC_BAD_FILE;
+	}
 	// Set to 0
 	result = fseek(file, 0, SEEK_SET);
 	if(result != 0) {
@@ -675,6 +725,9 @@ read_int8_from_file(FILE* file, int8_t* out_data)
 	int result;
 	if(file == NULL || out_data == NULL) {
 		return BPRC_NULL_PTR;
+	}
+	if(!can_read_from_file(file)) {
+		return BPRC_BAD_FILE;
 	}
 	// Set to 0
 	result = fseek(file, 0, SEEK_SET);
@@ -704,14 +757,16 @@ write_uint32_to_file(FILE* file, uint32_t data)
 	if(file == NULL) {
 		return BPRC_BAD_FILE;
 	}
-	//TODO: Error Checking
+	if(!can_write_to_file(file)) {
+		return BPRC_BAD_FILE;
+	}
 	// Truncate the file.
 	if(freopen(NULL, "w+", file) == NULL) {
 		return BPRC_BAD_FILE;
 	}
 	// Write the data
 	result = fprintf(file, "%"PRIu32"", data);
-	if(result < 0) {
+	if(result <= 0) {
 		return BPRC_BAD_WRITE;
 	}
 	return BPRC_OK;
@@ -732,15 +787,16 @@ write_int8_to_file(FILE* file, int8_t data)
 	if(file == NULL) {
 		return BPRC_BAD_FILE;
 	}
-	//TODO: Error Checking
+	if(!can_write_to_file(file)) {
+		return BPRC_BAD_FILE;
+	}
 	// Truncate the file.
-
 	if(freopen(NULL, "w+", file) == NULL) {
 		return BPRC_BAD_FILE;
 	}
 	// Write the data
 	result = fprintf(file, "%"PRId8"", data);
-	if(result < 0) {
+	if(result <= 0) {
 		return BPRC_BAD_WRITE;	
 	}
 	return BPRC_OK;
