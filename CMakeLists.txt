@@ -5,7 +5,7 @@
 
 set(PROJECT_NAME "BBB-PWM")
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.11)
 project(${PROJECT_NAME})
 
 enable_testing()
