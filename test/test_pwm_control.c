@@ -184,28 +184,32 @@ test_invalid_get_duty_cycle()
 	expect_neq(bbb_pwm_get_duty_cycle(bp, &duty), BPRC_OK);
 	
 	bbb_pwm_test_delete(&bp);
-
-	bp = bbb_pwm_test_new("test_invalid_set_duty_cycle", 1, 0);
-	// Try claiming now.
-	expect_eq(bbb_pwm_claim(bp), BPRC_OK);
-	expect_neq(bbb_pwm_get_duty_cycle(bp, &duty), BPRC_OK);
-
-	bbb_pwm_test_delete(&bp);
-	
 }
 
 void 
 test_invalid_get_period()
 {
+	uint32_t period = 0;
+	struct bbb_pwm_t* bp;
+	bp = bbb_pwm_test_new("test_invalid_set_period", 1, 0);
 
+	// Didn't claim, which is ok, but bad data.
+	expect_neq(bbb_pwm_get_period(bp, &period), BPRC_OK);
 	
+	bbb_pwm_test_delete(&bp);
 }
 
 void 
 test_invalid_get_polarity()
 {
+	int8_t polarity = 0;
+	struct bbb_pwm_t* bp;
+	bp = bbb_pwm_test_new("test_invalid_set_polarity", 1, 0);
 
+	// Didn't claim, which is ok, but bad data.
+	expect_neq(bbb_pwm_get_polarity(bp, &polarity), BPRC_OK);
 	
+	bbb_pwm_test_delete(&bp);
 }
 
 /**
