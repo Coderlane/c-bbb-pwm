@@ -20,7 +20,7 @@
 	if(a != b) {\
 		fprintf(stderr, "ERROR: %s != %s at line: %d\n",\
 				STR(a), STR(b), __LINE__);\
-		return -1;\
+		exit(-1);\
 	}\
 }
 
@@ -36,7 +36,7 @@
 	if(a == b) {\
 		fprintf(stderr, "ERROR: %s == %s at line: %d\n",\
 				STR(a), STR(b), __LINE__);\
-		return -1;\
+		exit(-1);\
 	}\
 }
 
