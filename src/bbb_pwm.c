@@ -592,25 +592,45 @@ int
 bbb_pwm_set_frequency(struct bbb_pwm_t* bp, float hertz)
 {
 	int result;
-	uint32_t period, duty_cycle;
+	uint32_t period, old_period;
+	uint32_t duty, old_duty;
 
 	assert(bp != NULL);
 
 	if(!bbb_pwm_is_claimed(bp)) {
 		return BPRC_NOT_CLAIMED;
 	}
-	
-	result = bbb_pwm_get_duty_cycle(bp, &duty_cycle);
+
+	// period can't be less than 1
+	// rule out divide by zero.
+	if(hertz > 1e9 || hertz <= 0) {
+		return BPRC_RANGE;
+	}
+
+	result = bbb_pwm_get_period(bp, &old_period);
 	if(result != BPRC_OK) {
 		return result;
 	}
 
-	period = hertz * 1e9;
+	result = bbb_pwm_get_duty_cycle(bp, &old_duty);
+	if(result != BPRC_OK) {
+		return result;
+	}
 
-	//TODO: What to do if period > duty
+	// Convert hertz to period in nanoseconds.
+	period = 1e9 / hertz;
 
-	//TODO implement this function.
-	return BPRC_NOT_IMPLEMENTED;
+	// Scale the new duty cycle to the new period.
+	duty = (((float) old_duty) * ((float) period / (float) old_period));
+	
+	// Set the new duty, this will drop pwm power instantaneously.
+	result = bbb_pwm_set_duty_cycle(bp, duty);
+	if(result != BPRC_OK) {
+		return result;
+	}		
+
+	// Set the new period.
+	return bbb_pwm_set_period(bp, period);
 }
 
 /**
@@ -731,6 +751,58 @@ out:
 /**
  * @brief 
  *
+ * @param bp
+ * @param[out] out_percent
+ *
+ * @return 
+ */
+int 
+bbb_pwm_get_duty_percent(struct bbb_pwm_t* bp, float* out_percent)
+{
+	uint32_t duty, period;
+	int result;
+	
+	result = bbb_pwm_get_period(bp, &period);
+	if(result != BPRC_OK) {
+		return result;
+	}
+	
+	result = bbb_pwm_get_duty_cycle(bp, &duty);
+	if(result != BPRC_OK) {
+		return result;
+	}
+
+	*out_percent = ((float) duty / (float) period) * 100.0f;
+	return BPRC_OK;
+}
+
+/**
+ * @brief 
+ *
+ * @param bp
+ * @param[out] out_hertz
+ *
+ * @return 
+ */
+int 
+bbb_pwm_get_frequency(struct bbb_pwm_t* bp, float* out_hertz)
+{
+	uint32_t period;
+	int result;
+
+	result = bbb_pwm_get_period(bp, &period);
+	if(result != BPRC_OK) {
+		return result;
+	}
+	
+	// Convert nanoseconds to hertz.
+	*out_hertz = (float) 1e9 / (float) period;
+	return BPRC_OK;
+}
+
+/**
+ * @brief 
+ *
  * @param file
  *
  * @return 
@@ -780,7 +852,7 @@ can_read_from_file(FILE* file)
  * @brief 
  *
  * @param file
- * @param out_data
+ * @param[out] out_data
  *
  * @return 
  */
@@ -811,7 +883,7 @@ read_uint32_from_file(FILE* file, uint32_t* out_data)
  * @brief 
  *
  * @param file
- * @param out_data
+ * @param[out] out_data
  *
  * @return 
  */

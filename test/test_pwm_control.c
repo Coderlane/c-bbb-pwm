@@ -20,6 +20,9 @@ void test_set_get_duty_cycle();
 void test_set_get_period();
 void test_set_get_polarity();
 
+void test_set_get_duty_percent();
+void test_set_get_frequency();
+
 void test_invalid_set_duty_cycle();
 void test_invalid_set_period();
 void test_invalid_set_polarity();
@@ -27,6 +30,7 @@ void test_invalid_set_polarity();
 void test_invalid_get_duty_cycle();
 void test_invalid_get_period();
 void test_invalid_get_polarity();
+
 
 struct bbb_pwm_t* bbb_pwm_test_new(const char* name, 
 		int create_files, int init_files);
@@ -38,6 +42,8 @@ main()
 	test_set_get_duty_cycle();
 	test_set_get_period();
 	test_set_get_polarity();
+	test_set_get_duty_percent();
+	test_set_get_frequency();
 
 	test_invalid_set_duty_cycle();
 	test_invalid_set_period();
@@ -123,6 +129,63 @@ test_set_get_polarity()
 	expect_eq(bbb_pwm_set_polarity(bp, -1), BPRC_OK);
 	expect_eq(bbb_pwm_get_polarity(bp, &polarity), BPRC_OK);
 	expect_eq(polarity, -1);
+
+	bbb_pwm_test_delete(&bp);
+}
+
+
+void
+test_set_get_duty_percent()
+{
+	float percent;
+	uint32_t duty;
+	struct bbb_pwm_t* bp;
+	bp = bbb_pwm_test_new("test_set_get_duty_percent", 1, 1);
+
+	expect_eq(bbb_pwm_claim(bp), BPRC_OK);
+	expect_eq(bbb_pwm_set_period(bp, 100), BPRC_OK);
+
+	expect_eq(bbb_pwm_set_duty_percent(bp, 100.0f), BPRC_OK);
+	expect_eq(bbb_pwm_get_duty_percent(bp, &percent), BPRC_OK);
+	expect_eq(100.0f, percent);
+	expect_eq(bbb_pwm_get_duty_cycle(bp, &duty), BPRC_OK);
+	expect_eq(100, duty);
+
+	expect_eq(bbb_pwm_set_duty_percent(bp, 50.0f), BPRC_OK);
+	expect_eq(bbb_pwm_get_duty_percent(bp, &percent), BPRC_OK);
+	expect_eq(50.0f, percent);
+	expect_eq(bbb_pwm_get_duty_cycle(bp, &duty), BPRC_OK);
+	expect_eq(50, duty);
+
+	expect_eq(bbb_pwm_set_duty_percent(bp, 0.0f), BPRC_OK);
+	expect_eq(bbb_pwm_get_duty_percent(bp, &percent), BPRC_OK);
+	expect_eq(0.0f, percent);
+	expect_eq(bbb_pwm_get_duty_cycle(bp, &duty), BPRC_OK);
+	expect_eq(0, duty);
+
+
+	bbb_pwm_test_delete(&bp);
+}
+
+void
+test_set_get_frequency()
+{
+	float frequency, percent;
+	uint32_t period;
+	struct bbb_pwm_t* bp;
+
+	bp = bbb_pwm_test_new("test_set_get_frequency", 1, 1);
+	expect_eq(bbb_pwm_claim(bp), BPRC_OK);
+
+	expect_eq(bbb_pwm_set_duty_percent(bp, 100.0f), BPRC_OK);
+	expect_eq(bbb_pwm_claim(bp), BPRC_OK);
+	expect_eq(bbb_pwm_set_frequency(bp, 100.0f), BPRC_OK);
+	expect_eq(bbb_pwm_get_frequency(bp, &frequency), BPRC_OK);
+	expect_eq(100.0f, frequency);
+	expect_eq(bbb_pwm_get_duty_percent(bp, &percent), BPRC_OK);
+	expect_eq(percent, 100.0f);
+	expect_eq(bbb_pwm_get_period(bp, &period), BPRC_OK);
+	expect_eq(period, 10000000);
 
 	bbb_pwm_test_delete(&bp);
 }
