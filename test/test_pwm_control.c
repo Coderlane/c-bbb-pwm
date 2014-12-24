@@ -133,7 +133,9 @@ test_set_get_polarity()
 	bbb_pwm_test_delete(&bp);
 }
 
-
+/**
+ * @brief Test getting and setting the duty percent.
+ */
 void
 test_set_get_duty_percent()
 {
@@ -167,6 +169,9 @@ test_set_get_duty_percent()
 	bbb_pwm_test_delete(&bp);
 }
 
+/**
+ * @brief Test setting and getting the frequency.
+ */
 void
 test_set_get_frequency()
 {
