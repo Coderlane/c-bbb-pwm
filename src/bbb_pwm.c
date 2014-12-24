@@ -589,11 +589,11 @@ bbb_pwm_set_duty_percent(struct bbb_pwm_t* bp, float percent)
  * @return 
  */
 int 
-bbb_pwm_set_frequency(struct bbb_pwm_t* bp, float hertz)
+bbb_pwm_set_frequency(struct bbb_pwm_t* bp, uint32_t hertz)
 {
 	int result;
-	uint32_t period, old_period;
-	uint32_t duty, old_duty;
+	uint32_t period;
+	uint32_t duty;
 
 	assert(bp != NULL);
 
@@ -607,27 +607,20 @@ bbb_pwm_set_frequency(struct bbb_pwm_t* bp, float hertz)
 		return BPRC_RANGE;
 	}
 
-	result = bbb_pwm_get_period(bp, &old_period);
-	if(result != BPRC_OK) {
-		return result;
-	}
-
-	result = bbb_pwm_get_duty_cycle(bp, &old_duty);
-	if(result != BPRC_OK) {
-		return result;
-	}
-
 	// Convert hertz to period in nanoseconds.
 	period = 1e9 / hertz;
 
-	// Scale the new duty cycle to the new period.
-	duty = (((float) old_duty) * ((float) period / (float) old_period));
-	
-	// Set the new duty, this will drop pwm power instantaneously.
-	result = bbb_pwm_set_duty_cycle(bp, duty);
+	result = bbb_pwm_get_duty_cycle(bp, &duty);
 	if(result != BPRC_OK) {
 		return result;
-	}		
+	}
+
+	// Duty can't exceede period.
+	// Duty should probably be throttled to zero first!
+	// Weird shit might happen :/
+	if(period < duty) {
+		return BPRC_RANGE;
+	}
 
 	// Set the new period.
 	return bbb_pwm_set_period(bp, period);
@@ -785,7 +778,7 @@ bbb_pwm_get_duty_percent(struct bbb_pwm_t* bp, float* out_percent)
  * @return 
  */
 int 
-bbb_pwm_get_frequency(struct bbb_pwm_t* bp, float* out_hertz)
+bbb_pwm_get_frequency(struct bbb_pwm_t* bp, uint32_t* out_hertz)
 {
 	uint32_t period;
 	int result;
@@ -796,7 +789,7 @@ bbb_pwm_get_frequency(struct bbb_pwm_t* bp, float* out_hertz)
 	}
 	
 	// Convert nanoseconds to hertz.
-	*out_hertz = (float) 1e9 / (float) period;
+	*out_hertz = 1e9 / period;
 	return BPRC_OK;
 }
 

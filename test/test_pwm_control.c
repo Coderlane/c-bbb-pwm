@@ -170,22 +170,30 @@ test_set_get_duty_percent()
 void
 test_set_get_frequency()
 {
-	float frequency, percent;
-	uint32_t period;
+	uint32_t period, frequency;
 	struct bbb_pwm_t* bp;
 
 	bp = bbb_pwm_test_new("test_set_get_frequency", 1, 1);
 	expect_eq(bbb_pwm_claim(bp), BPRC_OK);
-
-	expect_eq(bbb_pwm_set_duty_percent(bp, 100.0f), BPRC_OK);
-	expect_eq(bbb_pwm_claim(bp), BPRC_OK);
-	expect_eq(bbb_pwm_set_frequency(bp, 100.0f), BPRC_OK);
+	expect_eq(bbb_pwm_set_duty_cycle(bp, 25), BPRC_OK);
+	
+	expect_eq(bbb_pwm_set_frequency(bp, 100), BPRC_OK);
 	expect_eq(bbb_pwm_get_frequency(bp, &frequency), BPRC_OK);
-	expect_eq(100.0f, frequency);
-	expect_eq(bbb_pwm_get_duty_percent(bp, &percent), BPRC_OK);
-	expect_eq(percent, 100.0f);
+	expect_eq(100, frequency);
 	expect_eq(bbb_pwm_get_period(bp, &period), BPRC_OK);
 	expect_eq(period, 10000000);
+
+	expect_eq(bbb_pwm_set_frequency(bp, 200), BPRC_OK);
+	expect_eq(bbb_pwm_get_frequency(bp, &frequency), BPRC_OK);
+	expect_eq(200, frequency);
+
+	expect_eq(bbb_pwm_set_frequency(bp, 50), BPRC_OK);
+	expect_eq(bbb_pwm_get_frequency(bp, &frequency), BPRC_OK);
+	expect_eq(50, frequency);
+
+	expect_eq(bbb_pwm_set_frequency(bp, 500), BPRC_OK);
+	expect_eq(bbb_pwm_get_frequency(bp, &frequency), BPRC_OK);
+	expect_eq(500, frequency);
 
 	bbb_pwm_test_delete(&bp);
 }

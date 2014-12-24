@@ -57,12 +57,12 @@ int bbb_pwm_set_duty_cycle(struct bbb_pwm_t* bp, uint32_t duty);
 int bbb_pwm_set_period(struct bbb_pwm_t* bp, uint32_t period);
 int bbb_pwm_set_polarity(struct bbb_pwm_t* bp, int8_t polarity);
 int bbb_pwm_set_duty_percent(struct bbb_pwm_t* bp, float percent);
-int bbb_pwm_set_frequency(struct bbb_pwm_t* bp, float hertz);
+int bbb_pwm_set_frequency(struct bbb_pwm_t* bp, uint32_t hertz);
 
 int bbb_pwm_get_duty_cycle(struct bbb_pwm_t* bp, uint32_t* out_duty);
 int bbb_pwm_get_period(struct bbb_pwm_t* bp, uint32_t* out_period);
 int bbb_pwm_get_polarity(struct bbb_pwm_t* bp, int8_t* out_polarity);
 int bbb_pwm_get_duty_percent(struct bbb_pwm_t* bp, float* out_percent);
-int bbb_pwm_get_frequency(struct bbb_pwm_t* bp, float* out_hertz);
+int bbb_pwm_get_frequency(struct bbb_pwm_t* bp, uint32_t* out_hertz);
 
 #endif /* BBB_PWM_H */
