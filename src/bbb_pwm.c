@@ -469,13 +469,7 @@ bbb_pwm_set_duty_cycle(struct bbb_pwm_t* bp, uint32_t duty_cycle)
 	assert(bp != NULL);
 
 	if(!bbb_pwm_is_claimed(bp)) {
-		printf("unclaimed\n");
 		return BPRC_NOT_CLAIMED;
-	}
-
-	// Only allow up to 100%.
-	if(duty_cycle > 100) {
-		return BPRC_RANGE;
 	}
 
 	// Write the data.

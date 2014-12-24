@@ -139,9 +139,6 @@ test_invalid_set_duty_cycle()
 	// Didn't claim.
 	expect_neq(bbb_pwm_set_duty_cycle(bp, 10), BPRC_OK);
 	expect_eq(bbb_pwm_claim(bp), BPRC_OK);
-	
-	// Too big.
-	expect_neq(bbb_pwm_set_duty_cycle(bp, 101), BPRC_OK);
 
 	bbb_pwm_test_delete(&bp);
 }
