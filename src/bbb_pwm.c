@@ -529,6 +529,9 @@ bbb_pwm_set_polarity(struct bbb_pwm_t* bp, int8_t polarity)
 		return BPRC_NOT_CLAIMED;
 	}
 
+	// TODO: Do I need to disable the pwm first?
+	// https://www.kernel.org/doc/Documentation/pwm.txt
+
 	if(polarity != -1 && polarity != 1) {
 		// TODO Verify these limits.
 		return BPRC_RANGE;
@@ -554,21 +557,58 @@ bbb_pwm_set_polarity(struct bbb_pwm_t* bp, int8_t polarity)
 int 
 bbb_pwm_set_duty_percent(struct bbb_pwm_t* bp, float percent)
 {
-	//TODO implement this function.
-	return BPRC_NOT_IMPLEMENTED;
+	uint32_t duty_cycle, period;
+	int result;
+	assert(bp != NULL);
+
+	if(!bbb_pwm_is_claimed(bp)) {
+		return BPRC_NOT_CLAIMED;
+	}
+
+	if(percent < 0.0f || percent > 100.0f) {
+		return BPRC_RANGE;
+	}
+	
+	result = bbb_pwm_get_period(bp, &period);
+	if(result != BPRC_OK) {
+		return result;
+	}
+	// We need to invert the percentage.
+	// 0 Should be FULL STOP 100 should be FULL SPEED
+	duty_cycle = (uint32_t)(((float) period) * (percent / 100.0f)); 
+
+	return bbb_pwm_set_duty_cycle(bp, duty_cycle);
 }
 
 /**
  * @brief
  *
  * @param bp
- * @param mega_hertz
+ * @param hertz
  *
  * @return 
  */
 int 
-bbb_pwm_set_frequency(struct bbb_pwm_t* bp, float mega_hertz)
+bbb_pwm_set_frequency(struct bbb_pwm_t* bp, float hertz)
 {
+	int result;
+	uint32_t period, duty_cycle;
+
+	assert(bp != NULL);
+
+	if(!bbb_pwm_is_claimed(bp)) {
+		return BPRC_NOT_CLAIMED;
+	}
+	
+	result = bbb_pwm_get_duty_cycle(bp, &duty_cycle);
+	if(result != BPRC_OK) {
+		return result;
+	}
+
+	period = hertz * 1e9;
+
+	//TODO: What to do if period > duty
+
 	//TODO implement this function.
 	return BPRC_NOT_IMPLEMENTED;
 }
