@@ -547,12 +547,12 @@ bbb_pwm_set_polarity(struct bbb_pwm_t* bp, int8_t polarity)
 }
 
 /**
- * @brief 
+ * @brief Set the duty percentage or throttle of a pwm. 
  *
- * @param bp
- * @param percent
+ * @param bp The pwm to set.
+ * @param percent The percentage to set the duty to.
  *
- * @return 
+ * @return A status code.
  */
 int 
 bbb_pwm_set_duty_percent(struct bbb_pwm_t* bp, float percent)
@@ -581,12 +581,12 @@ bbb_pwm_set_duty_percent(struct bbb_pwm_t* bp, float percent)
 }
 
 /**
- * @brief
+ * @brief Set the period frequency of a pwm.
  *
- * @param bp
- * @param hertz
+ * @param bp The pwm to set.
+ * @param hertz The frequency in herts to set.
  *
- * @return 
+ * @return A status code.
  */
 int 
 bbb_pwm_set_frequency(struct bbb_pwm_t* bp, uint32_t hertz)
@@ -742,12 +742,13 @@ out:
 }
 
 /**
- * @brief 
+ * @brief Get the current duty percent, or throttle from the pwm. 
  *
- * @param bp
- * @param[out] out_percent
+ * @param bp The pwm to read from.
+ * @param[out] out_percent The percentage calcualted from 
+ * the period and duty cycle.
  *
- * @return 
+ * @return A status code.
  */
 int 
 bbb_pwm_get_duty_percent(struct bbb_pwm_t* bp, float* out_percent)
@@ -770,12 +771,12 @@ bbb_pwm_get_duty_percent(struct bbb_pwm_t* bp, float* out_percent)
 }
 
 /**
- * @brief 
+ * @brief Get the current frequncy of the period in hertz. 
  *
- * @param bp
- * @param[out] out_hertz
+ * @param bp The pwm to read from.
+ * @param[out] out_hertz The hertz calculated from the period.
  *
- * @return 
+ * @return A status code.
  */
 int 
 bbb_pwm_get_frequency(struct bbb_pwm_t* bp, uint32_t* out_hertz)
@@ -794,11 +795,11 @@ bbb_pwm_get_frequency(struct bbb_pwm_t* bp, uint32_t* out_hertz)
 }
 
 /**
- * @brief 
+ * @brief Check to see if we can write to a file. 
  *
- * @param file
+ * @param file The FILE* to check.
  *
- * @return 
+ * @return True/False can we write to the file.
  */
 int 
 can_write_to_file(FILE* file)
@@ -818,11 +819,11 @@ can_write_to_file(FILE* file)
 }
 
 /**
- * @brief 
+ * @brief Check to see if we can read from a file. 
  *
- * @param file
+ * @param file THe FILE* to check.
  *
- * @return 
+ * @return True/False can we read from a file.
  */
 int 
 can_read_from_file(FILE* file)
@@ -842,12 +843,12 @@ can_read_from_file(FILE* file)
 }
 
 /**
- * @brief 
+ * @brief Reads an uint32 from a file. 
  *
- * @param file
- * @param[out] out_data
+ * @param file The file to read from.
+ * @param[out] out_data The uint32 if successful.
  *
- * @return 
+ * @return A status code.
  */
 int 
 read_uint32_from_file(FILE* file, uint32_t* out_data)
@@ -873,12 +874,12 @@ read_uint32_from_file(FILE* file, uint32_t* out_data)
 }
 
 /**
- * @brief 
+ * @brief Reads an int8 from a file.
  *
- * @param file
- * @param[out] out_data
+ * @param file The file to read from.
+ * @param[out] out_data The int8 if successful.
  *
- * @return 
+ * @return A status code.
  */
 int 
 read_int8_from_file(FILE* file, int8_t* out_data)
@@ -904,12 +905,12 @@ read_int8_from_file(FILE* file, int8_t* out_data)
 }
 
 /**
- * @brief 
+ * @brief Write an uint32 to a file.
  *
- * @param file
- * @param data
+ * @param file The file to write to.
+ * @param data The uint32 to write.
  *
- * @return 
+ * @return A status code.
  */
 int
 write_uint32_to_file(FILE* file, uint32_t data)
@@ -934,12 +935,12 @@ write_uint32_to_file(FILE* file, uint32_t data)
 }
 
 /**
- * @brief 
+ * @brief Write an int8 to a file. 
  *
- * @param file
- * @param data
+ * @param file The file to write to.
+ * @param data THe int8 to write.
  *
- * @return 
+ * @return A status code.
  */
 int 
 write_int8_to_file(FILE* file, int8_t data)
