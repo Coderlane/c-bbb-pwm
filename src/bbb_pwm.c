@@ -465,11 +465,22 @@ bbb_pwm_is_claimed(struct bbb_pwm_t* bp)
 int 
 bbb_pwm_set_duty_cycle(struct bbb_pwm_t* bp, uint32_t duty_cycle)
 {
+	uint32_t period;
 	int result;
 	assert(bp != NULL);
 
 	if(!bbb_pwm_is_claimed(bp)) {
 		return BPRC_NOT_CLAIMED;
+	}
+	
+	result = bbb_pwm_get_period(bp, &period);
+ 	if(result != BPRC_OK)	{
+		return result;
+	}
+
+	// duty cycle must be less than or equal to period.
+	if(duty_cycle > period) {
+		return BPRC_RANGE;
 	}
 
 	// Write the data.
