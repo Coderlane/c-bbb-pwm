@@ -19,7 +19,6 @@
 #include <unistd.h>
 
 void test_open_and_close();
-void test_invaid_open_and_close();
 
 void test_can_write();
 void test_can_read();
@@ -49,7 +48,6 @@ int
 main() 
 {
 	test_open_and_close();
-	test_invaid_open_and_close();
 
 	test_can_read();
 	test_can_write();
@@ -86,36 +84,6 @@ test_open_and_close()
 	expect(file != NULL);
 
 	file_close_and_unclaim(file);
-}
-
-/**
- * @brief Test to see if invalid open and closes fail as expected.
- */
-void 
-test_invaid_open_and_close()
-{
-	FILE* file0 = NULL;
-	FILE* file1 = NULL;
-	char path[1024];
-
-	if(getcwd(path, sizeof(path)) == NULL) {
-		fprintf(stderr, "Error getting cwd!\n");
-		exit(errno);
-	}	
-
-	expect((strlen(path) + 
-				strlen("/test_invalid_open_and_close.txt")) < sizeof(path));
-	strcat(path, "/test_invalid_open_and_close.txt");
-
-	fprintf(stderr, "File: %s\n", path);
-
-
-	file0 = file_open_and_claim(path, "w+");
-	expect(file0 != NULL);
-	file1 = file_open_and_claim(path, "w+");
-	expect(file1 == NULL);
-
-	file_close_and_unclaim(file0);
 }
 
 /**

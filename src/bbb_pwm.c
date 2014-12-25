@@ -817,6 +817,7 @@ bbb_pwm_get_frequency(struct bbb_pwm_t* bp, uint32_t* out_hertz)
 FILE* 
 file_open_and_claim(const char* path, const char* mode)
 {
+	struct flock lock;
 	FILE* file;
 	int fd;
 
@@ -833,7 +834,19 @@ file_open_and_claim(const char* path, const char* mode)
 		return NULL;
 	}
 
-	if(flock(fd, LOCK_EX | LOCK_NB) < 0) {
+	// Lock the whole file.
+	lock.l_whence = SEEK_SET;
+	lock.l_start = 0;
+	lock.l_len = 0;
+
+	// Figure out the lock type.
+	if(file_can_write(file)) {
+		lock.l_type = F_WRLCK;
+	} else {
+		lock.l_type = F_RDLCK;
+	}
+
+	if(fcntl(fd, F_SETLK, &lock) < 0) {
 		// Failed to lock the file.
 		fclose(file);	
 		return NULL;
@@ -851,6 +864,8 @@ void
 file_close_and_unclaim(FILE* file)
 {
 	int fd;
+	struct flock unlock;
+
 	if(file == NULL) {
 		return;
 	}
@@ -860,8 +875,15 @@ file_close_and_unclaim(FILE* file)
 		return;
 	}
 	
+	// Unlock the whole file.
+	unlock.l_whence = SEEK_SET;
+	unlock.l_start = 0;
+	unlock.l_len = 0;
+
+	unlock.l_type = F_UNLCK;
+
 	// Unlock the file (If we had a claim on it.)
-	flock(fd, LOCK_UN | LOCK_NB);
+	fcntl(fd, F_SETLK, &unlock);
 
 	// Close the file.
 	fclose(file);
