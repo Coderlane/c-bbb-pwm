@@ -28,11 +28,14 @@
 *.x86_64
 *.hex
 
-#Project Specific
+# Project Specific
 build/
 
-#VIM
+# VIM
 .*.sw*
 
-#YCM
+# YCM
 *.pyc
+
+# Doxygen
+doc/
