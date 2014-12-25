@@ -263,7 +263,8 @@ struct bbb_pwm_t*
 bbb_pwm_new(const char* name, const char* root_path) 
 {
 	struct bbb_pwm_t* bp;
-	if(name == NULL) {
+	if(name == NULL || root_path == NULL) {
+		// Fail for bad setup.
 		return NULL;
 	}
 
@@ -350,36 +351,36 @@ bbb_pwm_claim(struct bbb_pwm_t* bp)
 	assert(bp->bp_polarity_file_path != NULL);
 
 	// Open the necessary files.
-	bp->bp_duty_file = fopen(bp->bp_duty_file_path, "r+");
+	bp->bp_duty_file = file_open_and_claim(bp->bp_duty_file_path, "r+");
 	if(bp->bp_duty_file == NULL) {
 		result = BPRC_BUSY;
 		goto out;
 	}
 	
-	bp->bp_period_file = fopen(bp->bp_period_file_path, "r+");
+	bp->bp_period_file = file_open_and_claim(bp->bp_period_file_path, "r+");
 	if(bp->bp_period_file == NULL) {
 		result = BPRC_BUSY;
 		goto out;
 	}
 	
-	bp->bp_polarity_file = fopen(bp->bp_polarity_file_path, "r+");
+	bp->bp_polarity_file = file_open_and_claim(bp->bp_polarity_file_path, "r+");
 	if(bp->bp_polarity_file == NULL) {
 		result = BPRC_BUSY;
 		goto out;
 	}
 
 	// Load the cached values.
-	result = read_uint32_from_file(bp->bp_duty_file, &(bp->bp_duty_cycle));
+	result = file_read_uint32(bp->bp_duty_file, &(bp->bp_duty_cycle));
 	if(result != BPRC_OK) {
 		goto out;
 	}
 	
-	result = read_uint32_from_file(bp->bp_period_file, &(bp->bp_period));
+	result = file_read_uint32(bp->bp_period_file, &(bp->bp_period));
 	if(result != BPRC_OK) {
 		goto out;
 	}
 	
-	result = read_int8_from_file(bp->bp_polarity_file, &(bp->bp_polarity));
+	result = file_read_int8(bp->bp_polarity_file, &(bp->bp_polarity));
 	if(result != BPRC_OK) {
 		goto out;
 	}
@@ -409,17 +410,17 @@ bbb_pwm_unclaim(struct bbb_pwm_t* bp)
 	bp->bp_state = BPS_UNCLAIMED;
 	// Close the duty file.	
 	if(bp->bp_duty_file != NULL) {
-		fclose(bp->bp_duty_file);
+		file_close_and_unclaim(bp->bp_duty_file);
 		bp->bp_duty_file = NULL;
 	}
 	// Close the period file.
 	if(bp->bp_period_file != NULL) {
-		fclose(bp->bp_period_file);
+		file_close_and_unclaim(bp->bp_period_file);
 		bp->bp_period_file = NULL;
 	}
 	// Close the polarity file.
 	if(bp->bp_polarity_file != NULL) {
-		fclose(bp->bp_polarity_file);
+		file_close_and_unclaim(bp->bp_polarity_file);
 		bp->bp_polarity_file = NULL;
 	}
 	return BPRC_OK;
@@ -484,7 +485,7 @@ bbb_pwm_set_duty_cycle(struct bbb_pwm_t* bp, uint32_t duty_cycle)
 	}
 
 	// Write the data.
-	result = write_uint32_to_file(bp->bp_duty_file, duty_cycle);
+	result = file_write_uint32(bp->bp_duty_file, duty_cycle);
 	if(result != BPRC_OK) {
 		return result;
 	}
@@ -512,7 +513,7 @@ bbb_pwm_set_period(struct bbb_pwm_t* bp, uint32_t period)
 		return BPRC_NOT_CLAIMED;
 	}
 
-	result = write_uint32_to_file(bp->bp_period_file, period);
+	result = file_write_uint32(bp->bp_period_file, period);
 	if(result != BPRC_OK) {
 		return result;
 	}
@@ -548,7 +549,7 @@ bbb_pwm_set_polarity(struct bbb_pwm_t* bp, int8_t polarity)
 		return BPRC_RANGE;
 	}
 
-	result = write_uint32_to_file(bp->bp_polarity_file, polarity);
+	result = file_write_uint32(bp->bp_polarity_file, polarity);
 	if(result != BPRC_OK) {
 		return result;
 	}
@@ -668,7 +669,7 @@ bbb_pwm_get_duty_cycle(struct bbb_pwm_t* bp, uint32_t* out_duty)
 		goto out;
 	}
 	
-	result = read_uint32_from_file(duty_file, out_duty);
+	result = file_read_uint32(duty_file, out_duty);
 out:
 	if(duty_file != NULL) {
 		fclose(duty_file);
@@ -706,7 +707,7 @@ bbb_pwm_get_period(struct bbb_pwm_t* bp, uint32_t* out_period)
 		goto out;
 	}
 	
-	result = read_uint32_from_file(period_file, out_period);
+	result = file_read_uint32(period_file, out_period);
 out:
 	if(period_file != NULL) {
 		fclose(period_file);
@@ -744,7 +745,7 @@ bbb_pwm_get_polarity(struct bbb_pwm_t* bp, int8_t* out_polarity)
 		goto out;
 	}
 
-	result = read_int8_from_file(polarity_file, out_polarity);
+	result = file_read_int8(polarity_file, out_polarity);
 out:
 	if(polarity_file != NULL) {
 		fclose(polarity_file);
@@ -806,6 +807,67 @@ bbb_pwm_get_frequency(struct bbb_pwm_t* bp, uint32_t* out_hertz)
 }
 
 /**
+ * @brief Open a file and then set a lock on it.
+ * Fail if we can't get a lock. 
+ *
+ * @param path The path to the file we are getting and locking.
+ *
+ * @return A FILE* if we could lock and open the file, else NULL.
+ */
+FILE* 
+file_open_and_claim(const char* path, const char* mode)
+{
+	FILE* file;
+	int fd;
+
+	file = fopen(path, mode);
+	if(file == NULL) {
+		// Failed to open the file!
+		return NULL;
+	}
+
+	fd = fileno(file);
+	if(fd < 0) {
+		// Failed to get the file descriptor.
+		fclose(file);
+		return NULL;
+	}
+
+	if(flock(fd, LOCK_EX | LOCK_NB) < 0) {
+		// Failed to lock the file.
+		fclose(file);	
+		return NULL;
+	}
+
+	return file;
+}
+
+/**
+ * @brief Close the file and then unlock it.
+ *
+ * @param file The file to close and then unlock.
+ */
+void 
+file_close_and_unclaim(FILE* file)
+{
+	int fd;
+	if(file == NULL) {
+		return;
+	}
+
+	fd = fileno(file);
+	if(fd < 0) {
+		return;
+	}
+	
+	// Unlock the file (If we had a claim on it.)
+	flock(fd, LOCK_UN | LOCK_NB);
+
+	// Close the file.
+	fclose(file);
+}
+
+/**
  * @brief Check to see if we can write to a file. 
  *
  * @param file The FILE* to check.
@@ -813,7 +875,7 @@ bbb_pwm_get_frequency(struct bbb_pwm_t* bp, uint32_t* out_hertz)
  * @return True/False can we write to the file.
  */
 int 
-can_write_to_file(FILE* file)
+file_can_write(FILE* file)
 {
 	int fd, mode;
 	if(file == NULL) {
@@ -837,7 +899,7 @@ can_write_to_file(FILE* file)
  * @return True/False can we read from a file.
  */
 int 
-can_read_from_file(FILE* file)
+file_can_read(FILE* file)
 {
 	int fd, mode;
 	if(file == NULL) {
@@ -862,13 +924,13 @@ can_read_from_file(FILE* file)
  * @return A status code.
  */
 int 
-read_uint32_from_file(FILE* file, uint32_t* out_data)
+file_read_uint32(FILE* file, uint32_t* out_data)
 {
 	int result;
 	if(file == NULL || out_data == NULL) {
 		return BPRC_NULL_PTR;
 	}
-	if(!can_read_from_file(file)) {
+	if(!file_can_read(file)) {
 		return BPRC_BAD_FILE;
 	}
 	// Set to 0
@@ -893,13 +955,13 @@ read_uint32_from_file(FILE* file, uint32_t* out_data)
  * @return A status code.
  */
 int 
-read_int8_from_file(FILE* file, int8_t* out_data)
+file_read_int8(FILE* file, int8_t* out_data)
 {
 	int result;
 	if(file == NULL || out_data == NULL) {
 		return BPRC_NULL_PTR;
 	}
-	if(!can_read_from_file(file)) {
+	if(!file_can_read(file)) {
 		return BPRC_BAD_FILE;
 	}
 	// Set to 0
@@ -924,13 +986,13 @@ read_int8_from_file(FILE* file, int8_t* out_data)
  * @return A status code.
  */
 int
-write_uint32_to_file(FILE* file, uint32_t data)
+file_write_uint32(FILE* file, uint32_t data)
 {
 	int result;
 	if(file == NULL) {
 		return BPRC_BAD_FILE;
 	}
-	if(!can_write_to_file(file)) {
+	if(!file_can_write(file)) {
 		return BPRC_BAD_FILE;
 	}
 	// Truncate the file.
@@ -954,13 +1016,13 @@ write_uint32_to_file(FILE* file, uint32_t data)
  * @return A status code.
  */
 int 
-write_int8_to_file(FILE* file, int8_t data)
+file_write_int8(FILE* file, int8_t data)
 {
 	int result;
 	if(file == NULL) {
 		return BPRC_BAD_FILE;
 	}
-	if(!can_write_to_file(file)) {
+	if(!file_can_write(file)) {
 		return BPRC_BAD_FILE;
 	}
 	// Truncate the file.

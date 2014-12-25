@@ -17,6 +17,8 @@
 
 #include <libudev.h>
 
+#include <sys/file.h>
+
 #include <assert.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -124,13 +126,16 @@ int bbb_pwm_controller_probe(struct bbb_pwm_controller_t* bpc);
 struct bbb_pwm_t* bbb_pwm_new(const char* name, const char* root_path);
 void bbb_pwm_delete(struct bbb_pwm_t** bp_ptr);
 
-int read_uint32_from_file(FILE* file, uint32_t* out_data);
-int read_int8_from_file(FILE* file, int8_t* out_data);
+int file_read_uint32(FILE* file, uint32_t* out_data);
+int file_read_int8(FILE* file, int8_t* out_data);
 
-int write_uint32_to_file(FILE* file, uint32_t data);
-int write_int8_to_file(FILE* file, int8_t data);
+int file_write_uint32(FILE* file, uint32_t data);
+int file_write_int8(FILE* file, int8_t data);
 
-int can_write_to_file(FILE* file);
-int can_read_from_file(FILE* file);
+int file_can_write(FILE* file);
+int file_can_read(FILE* file);
+
+FILE* file_open_and_claim(const char* path, const char* mode);
+void file_close_and_unclaim(FILE* file);
 
 #endif /* BBB_PWM_INTERNAL_H */

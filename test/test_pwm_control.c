@@ -16,6 +16,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+void test_claim_unclaim();
+void test_invalid_claim();
+void test_invalid_unclaim();
+
 void test_set_get_duty_cycle();
 void test_set_get_period();
 void test_set_get_polarity();
@@ -31,7 +35,6 @@ void test_invalid_get_duty_cycle();
 void test_invalid_get_period();
 void test_invalid_get_polarity();
 
-
 struct bbb_pwm_t* bbb_pwm_test_new(const char* name, 
 		int create_files, int init_files);
 void bbb_pwm_test_delete(struct bbb_pwm_t** bp_ptr);
@@ -39,6 +42,10 @@ void bbb_pwm_test_delete(struct bbb_pwm_t** bp_ptr);
 int 
 main() 
 {
+	test_claim_unclaim();
+	test_invalid_claim();
+	test_invalid_unclaim();
+	
 	test_set_get_duty_cycle();
 	test_set_get_period();
 	test_set_get_polarity();
@@ -54,6 +61,58 @@ main()
 	test_invalid_get_polarity();
 
 	return 0;
+}
+
+/**
+ * @brief Test claiming and unclaiming a pwm.
+ */
+void 
+test_claim_unclaim()
+{
+	struct bbb_pwm_t* bp;
+	bp = bbb_pwm_test_new("test_claim_unclaim", 1, 1);
+
+	expect_eq(bbb_pwm_claim(bp), BPRC_OK);
+	expect_eq(bbb_pwm_unclaim(bp), BPRC_OK);
+
+	expect_eq(bbb_pwm_claim(bp), BPRC_OK);
+	expect_eq(bbb_pwm_claim(bp), BPRC_OK);
+	expect_eq(bbb_pwm_unclaim(bp), BPRC_OK);
+
+	bbb_pwm_test_delete(&bp);
+}
+
+/**
+ * @brief Test that invalid claims fail.
+ */
+void 
+test_invalid_claim()
+{
+	struct bbb_pwm_t* bp0;
+	struct bbb_pwm_t* bp1;
+	bp0 = bbb_pwm_test_new("test_invalid_claim0", 1, 1);
+	bp1 = bbb_pwm_test_new("test_invalid_claim1", 0, 0);
+
+	expect_eq(bbb_pwm_claim(bp0), BPRC_OK);
+	expect_neq(bbb_pwm_claim(bp1), BPRC_OK);
+
+	bbb_pwm_test_delete(&bp0);
+	bbb_pwm_test_delete(&bp1);
+}
+
+/**
+ * @brief Test that invalid unclaims still pass.
+ */
+void
+test_invalid_unclaim()
+{
+	struct bbb_pwm_t* bp;
+	bp = bbb_pwm_test_new("test_invalid_unclaim", 1, 1);
+
+	// If we are already unclaimed, we pretend everything is ok.
+	expect_eq(bbb_pwm_unclaim(bp), BPRC_OK);
+
+	bbb_pwm_test_delete(&bp);
 }
 
 /**

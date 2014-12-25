@@ -8,6 +8,8 @@
 
 #include <bbb_pwm_internal.h>
 
+#include "test_macros.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
@@ -15,6 +17,9 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+
+void test_open_and_close();
+void test_invaid_open_and_close();
 
 void test_can_write();
 void test_can_read();
@@ -43,6 +48,9 @@ struct test_file {
 int 
 main() 
 {
+	test_open_and_close();
+	test_invaid_open_and_close();
+
 	test_can_read();
 	test_can_write();
 
@@ -56,39 +64,99 @@ main()
 	test_invalid_w_int8();
 }
 
+/**
+ * @brief Test if open and close work properly. 
+ */
+void 
+test_open_and_close()
+{
+	FILE* file;
+	char path[1024];
+
+	if(getcwd(path, sizeof(path)) == NULL) {
+		fprintf(stderr, "Error getting cwd!\n");
+		exit(errno);
+	}	
+
+	expect((strlen(path) + strlen("/test_open_and_close.txt")) < sizeof(path));
+	strcat(path, "/test_open_and_close.txt");
+
+	fprintf(stderr, "File: %s\n", path);
+	file = file_open_and_claim(path, "w+");
+	expect(file != NULL);
+
+	file_close_and_unclaim(file);
+}
+
+/**
+ * @brief Test to see if invalid open and closes fail as expected.
+ */
+void 
+test_invaid_open_and_close()
+{
+	FILE* file0 = NULL;
+	FILE* file1 = NULL;
+	char path[1024];
+
+	if(getcwd(path, sizeof(path)) == NULL) {
+		fprintf(stderr, "Error getting cwd!\n");
+		exit(errno);
+	}	
+
+	expect((strlen(path) + 
+				strlen("/test_invalid_open_and_close.txt")) < sizeof(path));
+	strcat(path, "/test_invalid_open_and_close.txt");
+
+	fprintf(stderr, "File: %s\n", path);
+
+
+	file0 = file_open_and_claim(path, "w+");
+	expect(file0 != NULL);
+	file1 = file_open_and_claim(path, "w+");
+	expect(file1 == NULL);
+
+	file_close_and_unclaim(file0);
+}
+
+/**
+ * @brief Test if file can write passes and fails when expected.
+ */
 void
 test_can_write()
 {
 	struct test_file* tf;
 
 	tf = test_file_new("/can_write_w.txt", "w");
-	assert(can_write_to_file(tf->tf_fp));
+	expect(file_can_write(tf->tf_fp));
 	test_file_delete(&tf);
 	
 	tf = test_file_new("/can_write_w+.txt", "w+");
-	assert(can_write_to_file(tf->tf_fp));
+	expect(file_can_write(tf->tf_fp));
 	test_file_delete(&tf);
 	
 	tf = test_file_new("/can_write_r.txt", "r");
-	assert(!can_write_to_file(tf->tf_fp));
+	expect(!file_can_write(tf->tf_fp));
 	test_file_delete(&tf);
 }
 
+/**
+ * @brief Test if file can read passes and fails when expected.
+ */
 void
 test_can_read()
 {
 	struct test_file* tf;
 	
 	tf = test_file_new("/can_read_r.txt", "r");
-	assert(can_read_from_file(tf->tf_fp));
+	expect(file_can_read(tf->tf_fp));
 	test_file_delete(&tf);
 
 	tf = test_file_new("/can_read_w+.txt", "w+");
-	assert(can_read_from_file(tf->tf_fp));
+	expect(file_can_read(tf->tf_fp));
 	test_file_delete(&tf);
 
 	tf = test_file_new("/can_read_w.txt", "w");
-	assert(!can_read_from_file(tf->tf_fp));
+	expect(!file_can_read(tf->tf_fp));
 	test_file_delete(&tf);
 }
 
@@ -102,15 +170,15 @@ test_rw_uint32()
 	struct test_file* tf;
 	tf = test_file_new("/rw_uint32.txt", "w+");
 
-	write_uint32_to_file(tf->tf_fp, UINT32_MAX);
-	read_uint32_from_file(tf->tf_fp, &data);
+	file_write_uint32(tf->tf_fp, UINT32_MAX);
+	file_read_uint32(tf->tf_fp, &data);
 	fprintf(stderr, "Written: %d Read: %d\n", UINT32_MAX, data);
-	assert(data == UINT32_MAX);
+	expect(data == UINT32_MAX);
 
-	write_uint32_to_file(tf->tf_fp, 0);
-	read_uint32_from_file(tf->tf_fp, &data);
+	file_write_uint32(tf->tf_fp, 0);
+	file_read_uint32(tf->tf_fp, &data);
 	fprintf(stderr, "Written: %d Read: %d\n", 0, data);
-	assert(data == 0);
+	expect(data == 0);
 
 	test_file_delete(&tf);
 }
@@ -125,17 +193,17 @@ test_rw_int8()
 	struct test_file* tf;
 	tf = test_file_new("/rw_int8.txt", "w+");
 
-	write_int8_to_file(tf->tf_fp, INT8_MIN);
-	read_int8_from_file(tf->tf_fp, &data);
-	assert(data == INT8_MIN);
+	file_write_int8(tf->tf_fp, INT8_MIN);
+	file_read_int8(tf->tf_fp, &data);
+	expect(data == INT8_MIN);
 
-	write_int8_to_file(tf->tf_fp, INT8_MAX);
-	read_int8_from_file(tf->tf_fp, &data);
-	assert(data == INT8_MAX);
+	file_write_int8(tf->tf_fp, INT8_MAX);
+	file_read_int8(tf->tf_fp, &data);
+	expect(data == INT8_MAX);
 
-	write_int8_to_file(tf->tf_fp, 0);
-	read_int8_from_file(tf->tf_fp, &data);
-	assert(data == 0);
+	file_write_int8(tf->tf_fp, 0);
+	file_read_int8(tf->tf_fp, &data);
+	expect(data == 0);
 
 	test_file_delete(&tf);
 }
@@ -151,11 +219,11 @@ test_invalid_r_uint32()
 	tf = test_file_new("/ir_uint32.txt", "w+");
 
 	// Test NULL ptrs.
-	assert(read_uint32_from_file(NULL, &data) != BPRC_OK); 
-	assert(read_uint32_from_file(tf->tf_fp, NULL) != BPRC_OK);
+	expect(file_read_uint32(NULL, &data) != BPRC_OK); 
+	expect(file_read_uint32(tf->tf_fp, NULL) != BPRC_OK);
 
 	// Test read from empty file.
-	assert(read_uint32_from_file(tf->tf_fp, &data) != BPRC_OK);
+	expect(file_read_uint32(tf->tf_fp, &data) != BPRC_OK);
 
 	test_file_delete(&tf);
 }
@@ -171,11 +239,11 @@ test_invalid_r_int8()
 	tf = test_file_new("/ir_int8.txt", "w+");
 
 	// Test NULL ptrs.
-	assert(read_int8_from_file(NULL, &data) != BPRC_OK); 
-	assert(read_int8_from_file(tf->tf_fp, NULL) != BPRC_OK);
+	expect(file_read_int8(NULL, &data) != BPRC_OK); 
+	expect(file_read_int8(tf->tf_fp, NULL) != BPRC_OK);
 
 	// Test read from empty file.
-	assert(read_int8_from_file(tf->tf_fp, &data) != BPRC_OK);
+	expect(file_read_int8(tf->tf_fp, &data) != BPRC_OK);
 
 	test_file_delete(&tf);
 }
@@ -190,10 +258,10 @@ test_invalid_w_uint32()
 	tf = test_file_new("/iw_uint32.txt", "r");
 
 	// Test NULL ptr.
-	assert(write_uint32_to_file(NULL, 0) != BPRC_OK);
+	expect(file_write_uint32(NULL, 0) != BPRC_OK);
 
 	// Test write to read only file.
-	assert(write_uint32_to_file(tf->tf_fp, 0) != BPRC_OK);
+	expect(file_write_uint32(tf->tf_fp, 0) != BPRC_OK);
 
 	test_file_delete(&tf);
 }
@@ -208,10 +276,10 @@ test_invalid_w_int8()
 	tf = test_file_new("/iw_int8.txt", "r");
 
 	// Test NULL ptr.
-	assert(write_int8_to_file(NULL, 0) != BPRC_OK);
+	expect(file_write_int8(NULL, 0) != BPRC_OK);
 
 	// Test write to read only file.
-	assert(write_int8_to_file(tf->tf_fp, 0) != BPRC_OK);
+	expect(file_write_int8(tf->tf_fp, 0) != BPRC_OK);
 
 	test_file_delete(&tf);
 }
@@ -241,7 +309,7 @@ test_file_new(const char* name, const char* mode)
 		exit(errno);
 	}	
 
-	assert((strlen(tf->tf_path) + strlen(name)) < sizeof(tf->tf_path));
+	expect((strlen(tf->tf_path) + strlen(name)) < sizeof(tf->tf_path));
 	strcat(tf->tf_path, name);
 	
 	tf->tf_mode = mode;
@@ -249,7 +317,7 @@ test_file_new(const char* name, const char* mode)
 	// Touch the file.	
 	fd = open(tf->tf_path,
 			O_WRONLY | O_CREAT | O_NOCTTY | O_NONBLOCK, 0666);
-	assert(fd > 0);
+	expect(fd > 0);
 	close(fd);
 
 	printf("File: %s Mode: %s\n", tf->tf_path, tf->tf_mode);

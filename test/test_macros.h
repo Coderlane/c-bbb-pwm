@@ -8,13 +8,25 @@
 #define STRINGIFY(val) #val
 #define STR(val) STRINGIFY(val)
 
+
 /**
- * @brief Check to see if a and be are equal, return -1 if they are not.
+ * @brief Check to see if an expression is true.
+ *
+ * @param expr The expression to test.
+ */
+#define expect(expr) {\
+	if(!(expr)) {\
+		fprintf(stderr, "ERROR: !%s at line: %d\n",\
+				STR(expr), __LINE__);\
+		exit(-1);\
+	}\
+}
+
+/**
+ * @brief Check to see if a and be are equal.
  *
  * @param a The first value.
  * @param b The second value.
- *
- * @return -1 on failure, else continue processing.
  */
 #define expect_eq(a, b) {\
 	if(a != b) {\
@@ -25,12 +37,10 @@
 }
 
 /**
- * @brief Check to see if a and be are ot nequal, return -1 if they are.
+ * @brief Check to see if a and be are ot nequal.
  *
  * @param a The first value.
  * @param b The second value.
- *
- * @return -1 on failure, else continue processing.
  */
 #define expect_neq(a, b) {\
 	if(a == b) {\
