@@ -79,7 +79,7 @@ bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc)
 	if(bpc->bpc_capemgr == NULL) {
 		return BPRC_NO_CAPEMGR;
 	}	
-	
+
 	// Enable the am33xx pwm controller on the cape manager.
 	if(bbb_capemgr_enable(bpc->bpc_capemgr, "am33xx_pwm") < 0) {
 		return BPRC_NO_PWM;
@@ -102,7 +102,7 @@ bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc)
  * @return BPRC_NOT_IMPLEMENTED
  */
 int 
-bbb_pwm_controller_probe(struct bbb_pwm_controller_t* bpc)
+bbb_pwm_controller_probe(__attribute__ ((unused)) struct bbb_pwm_controller_t* bpc)
 {
 	assert(bpc != NULL);
 	// TODO: Implement probing for pwms on the local filesystem.	
@@ -265,6 +265,7 @@ bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
 struct bbb_pwm_t*
 bbb_pwm_new(const char* name, const char* root_path) 
 {
+	int result;
 	struct bbb_pwm_t* bp;
 	if(name == NULL || root_path == NULL) {
 		// Fail for bad setup.
@@ -278,13 +279,32 @@ bbb_pwm_new(const char* name, const char* root_path)
 	bp->bp_state = BPS_UNCLAIMED;
 	// Copy the name
 	bp->bp_name = (char*) strdup(name);
+	if(bp->bp_name == NULL) {
+		bbb_pwm_delete(&bp);
+		goto out;
+	}
 	// Setup our paths.
-	asprintf(&(bp->bp_duty_file_path), "%s/%s", root_path, "duty");
-	asprintf(&(bp->bp_period_file_path), "%s/%s", root_path, "period");
-	asprintf(&(bp->bp_polarity_file_path), "%s/%s", root_path, "polarity");
-	
-	assert(bp->bp_name != NULL);
+	result = asprintf(&(bp->bp_duty_file_path), 
+			"%s/%s", root_path, "duty");
+	if(result < 0) {
+		bbb_pwm_delete(&bp);
+		goto out;
+	}
+	result = asprintf(&(bp->bp_period_file_path),
+			"%s/%s", root_path, "period");
+	if(result < 0) {
+		bbb_pwm_delete(&bp);
+		goto out;
+	}
 
+	result = asprintf(&(bp->bp_polarity_file_path), 
+			"%s/%s", root_path, "polarity");
+	if(result < 0) {
+		bbb_pwm_delete(&bp);
+		goto out;
+	}
+
+out:
 	return bp;
 }
 
@@ -307,7 +327,7 @@ bbb_pwm_delete(struct bbb_pwm_t** bp_ptr)
 
 	// Unclaim, since we are freeing.	
 	bbb_pwm_unclaim(bp);	
-	
+
 	// Free what has been allocated. 
 	if(bp->bp_name != NULL) {
 		free(bp->bp_name);
@@ -359,13 +379,13 @@ bbb_pwm_claim(struct bbb_pwm_t* bp)
 		result = BPRC_BUSY;
 		goto out;
 	}
-	
+
 	bp->bp_period_file = file_open_and_claim(bp->bp_period_file_path, "r+");
 	if(bp->bp_period_file == NULL) {
 		result = BPRC_BUSY;
 		goto out;
 	}
-	
+
 	bp->bp_polarity_file = file_open_and_claim(bp->bp_polarity_file_path, "r+");
 	if(bp->bp_polarity_file == NULL) {
 		result = BPRC_BUSY;
@@ -377,12 +397,12 @@ bbb_pwm_claim(struct bbb_pwm_t* bp)
 	if(result != BPRC_OK) {
 		goto out;
 	}
-	
+
 	result = file_read_uint32(bp->bp_period_file, &(bp->bp_period));
 	if(result != BPRC_OK) {
 		goto out;
 	}
-	
+
 	result = file_read_int8(bp->bp_polarity_file, &(bp->bp_polarity));
 	if(result != BPRC_OK) {
 		goto out;
@@ -476,9 +496,9 @@ bbb_pwm_set_duty_cycle(struct bbb_pwm_t* bp, uint32_t duty_cycle)
 	if(!bbb_pwm_is_claimed(bp)) {
 		return BPRC_NOT_CLAIMED;
 	}
-	
+
 	result = bbb_pwm_get_period(bp, &period);
- 	if(result != BPRC_OK)	{
+	if(result != BPRC_OK)	{
 		return result;
 	}
 
@@ -520,7 +540,7 @@ bbb_pwm_set_period(struct bbb_pwm_t* bp, uint32_t period)
 	if(result != BPRC_OK) {
 		return result;
 	}
-	
+
 	bp->bp_period = period;
 	return BPRC_OK;
 }
@@ -583,7 +603,7 @@ bbb_pwm_set_duty_percent(struct bbb_pwm_t* bp, float percent)
 	if(percent < 0.0f || percent > 100.0f) {
 		return BPRC_RANGE;
 	}
-	
+
 	result = bbb_pwm_get_period(bp, &period);
 	if(result != BPRC_OK) {
 		return result;
@@ -656,7 +676,7 @@ bbb_pwm_get_duty_cycle(struct bbb_pwm_t* bp, uint32_t* out_duty)
 {
 	FILE* duty_file = NULL;
 	int result = BPRC_OK;
-	
+
 	assert(bp != NULL);
 	assert(out_duty != NULL);
 
@@ -671,7 +691,7 @@ bbb_pwm_get_duty_cycle(struct bbb_pwm_t* bp, uint32_t* out_duty)
 		result = BPRC_BUSY;
 		goto out;
 	}
-	
+
 	result = file_read_uint32(duty_file, out_duty);
 out:
 	if(duty_file != NULL) {
@@ -698,7 +718,7 @@ bbb_pwm_get_period(struct bbb_pwm_t* bp, uint32_t* out_period)
 
 	assert(bp != NULL);
 	assert(out_period != NULL);
-	
+
 	if(bbb_pwm_is_claimed(bp)) {
 		*out_period = bp->bp_period;
 		goto out;
@@ -709,7 +729,7 @@ bbb_pwm_get_period(struct bbb_pwm_t* bp, uint32_t* out_period)
 		result = BPRC_BUSY;
 		goto out;
 	}
-	
+
 	result = file_read_uint32(period_file, out_period);
 out:
 	if(period_file != NULL) {
@@ -770,12 +790,12 @@ bbb_pwm_get_duty_percent(struct bbb_pwm_t* bp, float* out_percent)
 {
 	uint32_t duty, period;
 	int result;
-	
+
 	result = bbb_pwm_get_period(bp, &period);
 	if(result != BPRC_OK) {
 		return result;
 	}
-	
+
 	result = bbb_pwm_get_duty_cycle(bp, &duty);
 	if(result != BPRC_OK) {
 		return result;
@@ -803,7 +823,7 @@ bbb_pwm_get_frequency(struct bbb_pwm_t* bp, uint32_t* out_hertz)
 	if(result != BPRC_OK) {
 		return result;
 	}
-	
+
 	// Convert nanoseconds to hertz.
 	*out_hertz = 1e9 / period;
 	return BPRC_OK;
@@ -877,7 +897,7 @@ file_close_and_unclaim(FILE* file)
 	if(fd < 0) {
 		return;
 	}
-	
+
 	// Unlock the whole file.
 	unlock.l_whence = SEEK_SET;
 	unlock.l_start = 0;
