@@ -1,6 +1,6 @@
 # Root CMakeList.txt for libbbbpwm
 
-set(PROJECT_NAME "bbbpwm")
+set(PROJECT_NAME "libbbbpwm")
 
 cmake_minimum_required(VERSION 2.8.11)
 project(${PROJECT_NAME})
