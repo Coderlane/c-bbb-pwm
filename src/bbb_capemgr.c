@@ -1,3 +1,12 @@
+/**
+ * @file bbb_capemgr.c
+ * @brief This file contains the source behind the capemgr.
+ * The capemgr helps to work with devices exposed through the
+ * bone_capemgr interface. I use udev to make detection easier. 
+ * @author Travis Lane
+ * @version 0.1.0
+ * @date 2014-12-25
+ */
 
 #include "bbb_capemgr_internal.h"
 

@@ -1,3 +1,14 @@
+/**
+ * @file bbb_capemgr.h
+ * @brief THe interface for the capemgr.
+ * These functions help work with the bone_capemgr.
+ * You can emable components as you see fit.
+ * Currently disabling is disabled.
+ * It seems to be broken on the kernel side.
+ * @author Travis Lane
+ * @version 0.1.0
+ * @date 2014-12-25
+ */
 
 
 #ifndef BBB_CAPEMGR_H

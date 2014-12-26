@@ -1,11 +1,11 @@
 /**
  * @file bbb_pwm_internal.h
- * @brief 
+ * @brief Unexported innerworkings of the pwm controller and the pwms.
+ * Note: This is really meant for internal use only.
  * @author Travis Lane
- * @version 
- * @date 2014-10-10
+ * @version 0.1.0
+ * @date 2014-12-25
  */
-
 
 #ifndef BBB_PWM_INTERNAL_H
 #define BBB_PWM_INTERNAL_H

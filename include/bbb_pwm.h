@@ -1,9 +1,10 @@
 /**
  * @file bbb_pwm.h
- * @brief 
+ * @brief The exported functions and interfaces for the pwm controller and
+ * the pwms. 
  * @author Travis Lane
- * @version 
- * @date 2014-10-10
+ * @version 0.1.0
+ * @date 2014-12-25
  */
 
 #ifndef BBB_PWM_H

@@ -1,9 +1,10 @@
 /**
  * @file bbb_pwm.c
- * @brief 
+ * @brief This file contains the source behind the pwm controller
+ * and the individual pwms, as well as the file IO necessary for each.
  * @author Travis Lane
- * @version 
- * @date 2014-10-10
+ * @version 0.1.0
+ * @date 2014-12-25
  */
 
 #include <bbb_pwm_internal.h>
@@ -93,10 +94,12 @@ bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc)
 
 /**
  * @brief Probe the filesystem for obvious PWM devices.
+ * NOTE: This hasn't been implemented yet. Sorry!
+ * I'll add it in the next month or so. :)
  *
  * @param bpc The controller to probe on.
  *
- * @return A status code.
+ * @return BPRC_NOT_IMPLEMENTED
  */
 int 
 bbb_pwm_controller_probe(struct bbb_pwm_controller_t* bpc)
