@@ -44,11 +44,11 @@ Unfortunatly v0.1.0 isn't super usable. You'll want to include both bbb_pwm.h an
  
  In the future, I hope to make this all automatic! All you'd have to do is use the bbb_pwm_controller_t. Look for that in future releases.
  
- ## Documentation
+## Documentation
  
  Build yer own! I use doxygen, just open the Doxyfile with doxywizard or simmilar and output whatever type of files you want. In the future I'll upload these online, but not yet.
  
- ## Known Issues
+## Known Issues
  
  * No automatic detection
  * Requires root :/
