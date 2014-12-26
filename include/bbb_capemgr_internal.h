@@ -13,7 +13,7 @@
 
 #define _GNU_SOURCE
 
-#include <bbb_capemgr.h>
+#include "bbb_capemgr.h"
 
 #include <libudev.h>
 

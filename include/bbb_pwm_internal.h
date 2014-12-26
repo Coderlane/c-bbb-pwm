@@ -12,8 +12,8 @@
 
 #define _GNU_SOURCE
 
-#include <bbb_pwm.h>
-#include <bbb_capemgr.h>
+#include "bbb_pwm.h"
+#include "bbb_capemgr.h"
 
 #include <libudev.h>
 
