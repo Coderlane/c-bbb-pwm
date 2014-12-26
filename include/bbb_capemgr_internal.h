@@ -3,7 +3,7 @@
  * @brief Internal code for the capemgr.
  * Node: Don't include this file, it is unnecessary.
  * @author Travis Lane
- * @version 0.1.0
+ * @version 0.1.1
  * @date 2014-12-25
  */
 
