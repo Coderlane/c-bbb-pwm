@@ -6,6 +6,7 @@ includedir=@LIBBBBPWM_INSTALL_INCLUDEDIR@
 Name: libbbbpwm
 Description: A C library for managing pwm output from a beagle bone black.
 Version: @LIBBBBPWM_VERSION@
+Requires.private: libudev >= 150
 Libs: -L${libdir} -lbbbpwm
 Libs.private: -ludev
 Cflags: -I${includedir}

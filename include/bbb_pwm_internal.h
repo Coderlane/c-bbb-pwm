@@ -46,17 +46,17 @@ struct bbb_pwm_t {
 	/**
 	 * @brief The cached pwm duty cycle. 
 	 */
-	uint32_t 									bp_duty_cycle;
+	uint32_t 								bp_duty_cycle;
 
 	/**
 	 * @brief The cached pwm period (in nanoseconds).
 	 */
-	uint32_t 									bp_period;
+	uint32_t 								bp_period;
 
 	/**
 	 * @brief The cached pwm polarity.
 	 */
-	int8_t 										bp_polarity;
+	int8_t 									bp_polarity;
 
 	/**
 	 * @brief The file path of the duty file.
