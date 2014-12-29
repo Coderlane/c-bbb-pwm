@@ -3,7 +3,7 @@
  * @brief This file contains the source behind the pwm controller
  * and the individual pwms, as well as the file IO necessary for each.
  * @author Travis Lane
- * @version 0.1.1
+ * @version 0.1.2
  * @date 2014-12-25
  */
 
