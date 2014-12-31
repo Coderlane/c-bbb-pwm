@@ -14,23 +14,23 @@
  *
  * @return A new controller, or NULL on failure.
  */
-struct bbb_pwm_controller_t* 
+struct bbb_pwm_controller_t *
 bbb_pwm_controller_new()
 {
-	struct bbb_pwm_controller_t* bpc = NULL;
+  struct bbb_pwm_controller_t *bpc = NULL;
 
-	bpc = calloc(sizeof(struct bbb_pwm_controller_t), 1);
-	assert(bpc != NULL);
+  bpc = calloc(sizeof(struct bbb_pwm_controller_t), 1);
+  assert(bpc != NULL);
 
-	if(bbb_pwm_controller_init(bpc) != BPRC_OK) {
-		bbb_pwm_controller_delete(&bpc);
-		goto out;
-	}
+  if(bbb_pwm_controller_init(bpc) != BPRC_OK) {
+    bbb_pwm_controller_delete(&bpc);
+    goto out;
+  }
 
-	bbb_pwm_controller_probe(bpc);
+  bbb_pwm_controller_probe(bpc);
 
 out:
-	return bpc;
+  return bpc;
 }
 
 /**
@@ -38,30 +38,30 @@ out:
  *
  * @param bpc_ptr The controller to free.
  */
-void 
-bbb_pwm_controller_delete(struct bbb_pwm_controller_t **bpc_ptr) 
+void
+bbb_pwm_controller_delete(struct bbb_pwm_controller_t **bpc_ptr)
 {
-	struct bbb_pwm_controller_t *bpc;
+  struct bbb_pwm_controller_t *bpc;
 
-	// Check the ptr.
-	if(bpc_ptr == NULL) {
-		return;
-	}
-	// Check the referenced ptr.
-	bpc = (*bpc_ptr);
-	if(bpc == NULL) {
-		return;
-	}
+  // Check the ptr.
+  if(bpc_ptr == NULL) {
+    return;
+  }
+  // Check the referenced ptr.
+  bpc = (*bpc_ptr);
+  if(bpc == NULL) {
+    return;
+  }
 
-	while(bpc->bpc_head_pwm) {
-		// Unclaim before we remove it.
-		bbb_pwm_unclaim(bpc->bpc_head_pwm);
-		bbb_pwm_controller_remove_pwm(bpc, bpc->bpc_head_pwm->bp_name);
-	}
+  while(bpc->bpc_head_pwm) {
+    // Unclaim before we remove it.
+    bbb_pwm_unclaim(bpc->bpc_head_pwm);
+    bbb_pwm_controller_remove_pwm(bpc, bpc->bpc_head_pwm->bp_name);
+  }
 
-	// Free the origional bpc
-	free(bpc);
-	(*bpc_ptr) = NULL;
+  // Free the origional bpc
+  free(bpc);
+  (*bpc_ptr) = NULL;
 }
 
 /**
@@ -74,22 +74,22 @@ bbb_pwm_controller_delete(struct bbb_pwm_controller_t **bpc_ptr)
 int
 bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc)
 {
-	// Create a new bbb_capemgr to talk to the capemanager.
-	bpc->bpc_capemgr = bbb_capemgr_new();
-	if(bpc->bpc_capemgr == NULL) {
-		return BPRC_NO_CAPEMGR;
-	}	
+  // Create a new bbb_capemgr to talk to the capemanager.
+  bpc->bpc_capemgr = bbb_capemgr_new();
+  if(bpc->bpc_capemgr == NULL) {
+    return BPRC_NO_CAPEMGR;
+  }
 
-	// Enable the am33xx pwm controller on the cape manager.
-	if(bbb_capemgr_enable(bpc->bpc_capemgr, "am33xx_pwm") < 0) {
-		return BPRC_NO_PWM;
-	}
+  // Enable the am33xx pwm controller on the cape manager.
+  if(bbb_capemgr_enable(bpc->bpc_capemgr, "am33xx_pwm") < 0) {
+    return BPRC_NO_PWM;
+  }
 
-	// Probing can fail and it isn't the end of the world.
-	// Maybe emit a warning?
-	bbb_pwm_controller_probe(bpc);
+  // Probing can fail and it isn't the end of the world.
+  // Maybe emit a warning?
+  bbb_pwm_controller_probe(bpc);
 
-	return BPRC_OK;
+  return BPRC_OK;
 }
 
 /**
@@ -101,78 +101,79 @@ bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc)
  *
  * @return BPRC_NOT_IMPLEMENTED
  */
-int 
-bbb_pwm_controller_probe(__attribute__ ((unused)) struct bbb_pwm_controller_t* bpc)
+int
+bbb_pwm_controller_probe(__attribute__ ((unused)) struct bbb_pwm_controller_t
+                         *bpc)
 {
-	assert(bpc != NULL);
-	// TODO: Implement probing for pwms on the local filesystem.	
-	return BPRC_NOT_IMPLEMENTED;
+  assert(bpc != NULL);
+  // TODO: Implement probing for pwms on the local filesystem.
+  return BPRC_NOT_IMPLEMENTED;
 }
 
 /**
- * @brief Adds a PWM to a controller. 
+ * @brief Adds a PWM to a controller.
  *
  * @param bpc The controller to add to.
  * @param bp The PWM to add.
  *
  * @return A status code.
  */
-int 
-bbb_pwm_controller_add_pwm(struct bbb_pwm_controller_t* bpc, 
-		struct bbb_pwm_t* bp)
+int
+bbb_pwm_controller_add_pwm(struct bbb_pwm_controller_t *bpc,
+                           struct bbb_pwm_t *bp)
 {
-	struct bbb_pwm_t* cur = NULL;
-	int result;
+  struct bbb_pwm_t *cur = NULL;
+  int result;
 
-	assert(bpc != NULL);
-	assert(bp != NULL);
+  assert(bpc != NULL);
+  assert(bp != NULL);
 
-	// Linked list insert in order.
-	cur = bpc->bpc_head_pwm;
-	if(cur == NULL) {
-		// New list.
-		bpc->bpc_head_pwm = bp;
-		return BPRC_OK;
-	}
+  // Linked list insert in order.
+  cur = bpc->bpc_head_pwm;
+  if(cur == NULL) {
+    // New list.
+    bpc->bpc_head_pwm = bp;
+    return BPRC_OK;
+  }
 
-	// Do our compare.
-	result = strcmp(bp->bp_name, cur->bp_name);
+  // Do our compare.
+  result = strcmp(bp->bp_name, cur->bp_name);
 
-	if(result == 0) {
-		// Front was duplicate.
-		return BPRC_DUPLICATE;
-	}
+  if(result == 0) {
+    // Front was duplicate.
+    return BPRC_DUPLICATE;
+  }
 
-	if(result < 0) {
-		// Insert in front.
-		bp->bp_next = cur;
-		bpc->bpc_head_pwm = bp;
-		return BPRC_OK;
-	}
+  if(result < 0) {
+    // Insert in front.
+    bp->bp_next = cur;
+    bpc->bpc_head_pwm = bp;
+    return BPRC_OK;
+  }
 
-	// Not front or dupe, thus we must search!
-	while(cur->bp_next != NULL) {
-		// Do our compare.
-		// Note we compare on the NEXT element.
-		result = strcmp(bp->bp_name, cur->bp_next->bp_name);
+  // Not front or dupe, thus we must search!
+  while(cur->bp_next != NULL) {
+    // Do our compare.
+    // Note we compare on the NEXT element.
+    result = strcmp(bp->bp_name, cur->bp_next->bp_name);
 
-		if(result == 0) {
-			// Found a duplicate item.
-			return BPRC_DUPLICATE;
-		}
+    if(result == 0) {
+      // Found a duplicate item.
+      return BPRC_DUPLICATE;
+    }
 
-		if(result < 0) {
-			// Found our place.
-			bp->bp_next = cur->bp_next;
-			cur->bp_next = bp;
-			return BPRC_OK;
-		}
-		// This is not the pointer you were looking for.
-		cur = cur->bp_next;
-	}
-	// If hit the end and we still haven't found our place, insert at end.
-	cur->bp_next = bp;
-	return BPRC_OK;
+    if(result < 0) {
+      // Found our place.
+      bp->bp_next = cur->bp_next;
+      cur->bp_next = bp;
+      return BPRC_OK;
+    }
+    // This is not the pointer you were looking for.
+    cur = cur->bp_next;
+  }
+  // If hit the end and we still haven't found our place, insert at end.
+  cur->bp_next = bp;
+  return BPRC_OK;
 }
 
 /**
@@ -184,75 +185,75 @@ bbb_pwm_controller_add_pwm(struct bbb_pwm_controller_t* bpc,
  *
  * @return A status code.
  */
-int 
-bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
-		const char* name)
+int
+bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t *bpc,
+                              const char *name)
 {
-	struct bbb_pwm_t* cur;
-	int result;
+  struct bbb_pwm_t *cur;
+  int result;
 
-	assert(bpc != NULL);
-	assert(name != NULL);
+  assert(bpc != NULL);
+  assert(name != NULL);
 
-	// Remove from a sorted list
+  // Remove from a sorted list
 
-	cur = bpc->bpc_head_pwm;
-	if(cur == NULL) {
-		// Empty list.
-		return BPRC_PWM_NOT_FOUND;
-	}
+  cur = bpc->bpc_head_pwm;
+  if(cur == NULL) {
+    // Empty list.
+    return BPRC_PWM_NOT_FOUND;
+  }
 
-	// Do our compare
-	result = strcmp(cur->bp_name, name);
+  // Do our compare
+  result = strcmp(cur->bp_name, name);
 
-	if(result == 0) {
-		if(!bbb_pwm_is_unclaimed(cur)) {
-			// Make sure it isn't locked.
-			return BPRC_BUSY;
-		}
-		// First item was the one to delete.
-		bpc->bpc_head_pwm = cur->bp_next;
-		bbb_pwm_delete(&cur);
-		bpc->bpc_num_pwms--;
-		return BPRC_OK;
-	}
+  if(result == 0) {
+    if(!bbb_pwm_is_unclaimed(cur)) {
+      // Make sure it isn't locked.
+      return BPRC_BUSY;
+    }
+    // First item was the one to delete.
+    bpc->bpc_head_pwm = cur->bp_next;
+    bbb_pwm_delete(&cur);
+    bpc->bpc_num_pwms--;
+    return BPRC_OK;
+  }
 
-	if(result > 0) {
-		// Item can't possibly be in our list.
-		return BPRC_PWM_NOT_FOUND;
-	}
+  if(result > 0) {
+    // Item can't possibly be in our list.
+    return BPRC_PWM_NOT_FOUND;
+  }
 
-	while(cur->bp_next != NULL) {
-		// Do our compare.
-		result = strcmp(cur->bp_next->bp_name, name);
-		if(result == 0) {
-			// Found our target.
-			struct bbb_pwm_t* tmp = cur->bp_next;
+  while(cur->bp_next != NULL) {
+    // Do our compare.
+    result = strcmp(cur->bp_next->bp_name, name);
+    if(result == 0) {
+      // Found our target.
+      struct bbb_pwm_t *tmp = cur->bp_next;
 
-			if(!bbb_pwm_is_unclaimed(cur)) {
-				// Make sure it isn't locked.
-				return BPRC_BUSY;
-			}
+      if(!bbb_pwm_is_unclaimed(cur)) {
+        // Make sure it isn't locked.
+        return BPRC_BUSY;
+      }
 
-			// Remove it from the linked list.
-			cur->bp_next = tmp->bp_next;
-			bbb_pwm_delete(&tmp);
-			bpc->bpc_num_pwms--;
+      // Remove it from the linked list.
+      cur->bp_next = tmp->bp_next;
+      bbb_pwm_delete(&tmp);
+      bpc->bpc_num_pwms--;
 
-			return BPRC_OK;
-		}
+      return BPRC_OK;
+    }
 
-		if(result > 0) {
-			// Item can't possibly be in our list.
-			return BPRC_PWM_NOT_FOUND;
-		}
-		// Move on.
-		cur = cur->bp_next;
-		assert(cur != NULL);
-	}
+    if(result > 0) {
+      // Item can't possibly be in our list.
+      return BPRC_PWM_NOT_FOUND;
+    }
+    // Move on.
+    cur = cur->bp_next;
+    assert(cur != NULL);
+  }
 
-	// We are at the end and didn't find anything.
-	return BPRC_PWM_NOT_FOUND;
+  // We are at the end and didn't find anything.
+  return BPRC_PWM_NOT_FOUND;
 }
 
 /**
@@ -262,50 +263,50 @@ bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
  *
  * @return A new pwm or NULL on failure.
  */
-struct bbb_pwm_t*
-bbb_pwm_new(const char* name, const char* root_path) 
+struct bbb_pwm_t *
+bbb_pwm_new(const char *name, const char *root_path)
 {
-	int result;
-	struct bbb_pwm_t* bp;
-	if(name == NULL || root_path == NULL) {
-		// Fail for bad setup.
-		return NULL;
-	}
+  int result;
+  struct bbb_pwm_t *bp;
+  if(name == NULL || root_path == NULL) {
+    // Fail for bad setup.
+    return NULL;
+  }
 
-	bp = calloc(sizeof(struct bbb_pwm_t), 1);
-	assert(bp != NULL);
+  bp = calloc(sizeof(struct bbb_pwm_t), 1);
+  assert(bp != NULL);
 
-	// Initially we are unclaimed.
-	bp->bp_state = BPS_UNCLAIMED;
-	// Copy the name
-	bp->bp_name = (char*) strdup(name);
-	if(bp->bp_name == NULL) {
-		bbb_pwm_delete(&bp);
-		goto out;
-	}
-	// Setup our paths.
-	result = asprintf(&(bp->bp_duty_file_path), 
-			"%s/%s", root_path, "duty");
-	if(result < 0) {
-		bbb_pwm_delete(&bp);
-		goto out;
-	}
-	result = asprintf(&(bp->bp_period_file_path),
-			"%s/%s", root_path, "period");
-	if(result < 0) {
-		bbb_pwm_delete(&bp);
-		goto out;
-	}
+  // Initially we are unclaimed.
+  bp->bp_state = BPS_UNCLAIMED;
+  // Copy the name
+  bp->bp_name = (char *) strdup(name);
+  if(bp->bp_name == NULL) {
+    bbb_pwm_delete(&bp);
+    goto out;
+  }
+  // Setup our paths.
+  result = asprintf(&(bp->bp_duty_file_path),
+                    "%s/%s", root_path, "duty");
+  if(result < 0) {
+    bbb_pwm_delete(&bp);
+    goto out;
+  }
+  result = asprintf(&(bp->bp_period_file_path),
+                    "%s/%s", root_path, "period");
+  if(result < 0) {
+    bbb_pwm_delete(&bp);
+    goto out;
+  }
 
-	result = asprintf(&(bp->bp_polarity_file_path), 
-			"%s/%s", root_path, "polarity");
-	if(result < 0) {
-		bbb_pwm_delete(&bp);
-		goto out;
-	}
+  result = asprintf(&(bp->bp_polarity_file_path),
+                    "%s/%s", root_path, "polarity");
+  if(result < 0) {
+    bbb_pwm_delete(&bp);
+    goto out;
+  }
 
 out:
-	return bp;
+  return bp;
 }
 
 /**
@@ -315,38 +316,38 @@ out:
  * @param bp_ptr The pwm to delete.
  */
 void
-bbb_pwm_delete(struct bbb_pwm_t** bp_ptr) 
+bbb_pwm_delete(struct bbb_pwm_t **bp_ptr)
 {
-	struct bbb_pwm_t* bp;
-	assert(bp_ptr != NULL);
+  struct bbb_pwm_t *bp;
+  assert(bp_ptr != NULL);
 
-	bp = *bp_ptr;
-	if(bp == NULL) {
-		return;
-	}
+  bp = *bp_ptr;
+  if(bp == NULL) {
+    return;
+  }
 
-	// Unclaim, since we are freeing.	
-	bbb_pwm_unclaim(bp);	
+  // Unclaim, since we are freeing.
+  bbb_pwm_unclaim(bp);
 
-	// Free what has been allocated. 
-	if(bp->bp_name != NULL) {
-		free(bp->bp_name);
-	}
+  // Free what has been allocated.
+  if(bp->bp_name != NULL) {
+    free(bp->bp_name);
+  }
 
-	if(bp->bp_duty_file_path != NULL) {
-		free(bp->bp_duty_file_path);
-	}
+  if(bp->bp_duty_file_path != NULL) {
+    free(bp->bp_duty_file_path);
+  }
 
-	if(bp->bp_period_file_path != NULL) {
-		free(bp->bp_period_file_path);
-	}
+  if(bp->bp_period_file_path != NULL) {
+    free(bp->bp_period_file_path);
+  }
 
-	if(bp->bp_polarity_file_path != NULL) {
-		free(bp->bp_polarity_file_path);
-	}
+  if(bp->bp_polarity_file_path != NULL) {
+    free(bp->bp_polarity_file_path);
+  }
 
-	free(bp);
-	*bp_ptr = NULL;	
+  free(bp);
+  *bp_ptr = NULL;
 }
 
 /**
@@ -357,65 +358,65 @@ bbb_pwm_delete(struct bbb_pwm_t** bp_ptr)
  *
  * @return A status code.
  */
-int 
-bbb_pwm_claim(struct bbb_pwm_t* bp)
+int
+bbb_pwm_claim(struct bbb_pwm_t *bp)
 {
-	int result = BPRC_OK;
+  int result = BPRC_OK;
 
-	assert(bp != NULL);
+  assert(bp != NULL);
 
-	if(bbb_pwm_is_claimed(bp)) {
-		// We already claimed it.
-		return BPRC_OK;
-	}
+  if(bbb_pwm_is_claimed(bp)) {
+    // We already claimed it.
+    return BPRC_OK;
+  }
 
-	assert(bp->bp_duty_file_path != NULL);
-	assert(bp->bp_period_file_path != NULL);
-	assert(bp->bp_polarity_file_path != NULL);
+  assert(bp->bp_duty_file_path != NULL);
+  assert(bp->bp_period_file_path != NULL);
+  assert(bp->bp_polarity_file_path != NULL);
 
-	// Open the necessary files.
-	bp->bp_duty_file = file_open_and_claim(bp->bp_duty_file_path, "r+");
-	if(bp->bp_duty_file == NULL) {
-		result = BPRC_BUSY;
-		goto out;
-	}
+  // Open the necessary files.
+  bp->bp_duty_file = file_open_and_claim(bp->bp_duty_file_path, "r+");
+  if(bp->bp_duty_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
 
-	bp->bp_period_file = file_open_and_claim(bp->bp_period_file_path, "r+");
-	if(bp->bp_period_file == NULL) {
-		result = BPRC_BUSY;
-		goto out;
-	}
+  bp->bp_period_file = file_open_and_claim(bp->bp_period_file_path, "r+");
+  if(bp->bp_period_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
 
-	bp->bp_polarity_file = file_open_and_claim(bp->bp_polarity_file_path, "r+");
-	if(bp->bp_polarity_file == NULL) {
-		result = BPRC_BUSY;
-		goto out;
-	}
+  bp->bp_polarity_file = file_open_and_claim(bp->bp_polarity_file_path, "r+");
+  if(bp->bp_polarity_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
 
-	// Load the cached values.
-	result = file_read_uint32(bp->bp_duty_file, &(bp->bp_duty_cycle));
-	if(result != BPRC_OK) {
-		goto out;
-	}
+  // Load the cached values.
+  result = file_read_uint32(bp->bp_duty_file, &(bp->bp_duty_cycle));
+  if(result != BPRC_OK) {
+    goto out;
+  }
 
-	result = file_read_uint32(bp->bp_period_file, &(bp->bp_period));
-	if(result != BPRC_OK) {
-		goto out;
-	}
+  result = file_read_uint32(bp->bp_period_file, &(bp->bp_period));
+  if(result != BPRC_OK) {
+    goto out;
+  }
 
-	result = file_read_int8(bp->bp_polarity_file, &(bp->bp_polarity));
-	if(result != BPRC_OK) {
-		goto out;
-	}
+  result = file_read_int8(bp->bp_polarity_file, &(bp->bp_polarity));
+  if(result != BPRC_OK) {
+    goto out;
+  }
 
 out:
-	if(result != BPRC_OK) {
-		// On failure, unclaim will force a cleanup.
-		bbb_pwm_unclaim(bp);
-	} else {
-		bp->bp_state = BPS_CLAIMED;
-	}
-	return result;
+  if(result != BPRC_OK) {
+    // On failure, unclaim will force a cleanup.
+    bbb_pwm_unclaim(bp);
+  } else {
+    bp->bp_state = BPS_CLAIMED;
+  }
+  return result;
 }
 
 /**
@@ -425,28 +426,28 @@ out:
  *
  * @return A status code.
  */
-int 
-bbb_pwm_unclaim(struct bbb_pwm_t* bp)
+int
+bbb_pwm_unclaim(struct bbb_pwm_t *bp)
 {
-	assert(bp != NULL);
+  assert(bp != NULL);
 
-	bp->bp_state = BPS_UNCLAIMED;
-	// Close the duty file.	
-	if(bp->bp_duty_file != NULL) {
-		file_close_and_unclaim(bp->bp_duty_file);
-		bp->bp_duty_file = NULL;
-	}
-	// Close the period file.
-	if(bp->bp_period_file != NULL) {
-		file_close_and_unclaim(bp->bp_period_file);
-		bp->bp_period_file = NULL;
-	}
-	// Close the polarity file.
-	if(bp->bp_polarity_file != NULL) {
-		file_close_and_unclaim(bp->bp_polarity_file);
-		bp->bp_polarity_file = NULL;
-	}
-	return BPRC_OK;
+  bp->bp_state = BPS_UNCLAIMED;
+  // Close the duty file.
+  if(bp->bp_duty_file != NULL) {
+    file_close_and_unclaim(bp->bp_duty_file);
+    bp->bp_duty_file = NULL;
+  }
+  // Close the period file.
+  if(bp->bp_period_file != NULL) {
+    file_close_and_unclaim(bp->bp_period_file);
+    bp->bp_period_file = NULL;
+  }
+  // Close the polarity file.
+  if(bp->bp_polarity_file != NULL) {
+    file_close_and_unclaim(bp->bp_polarity_file);
+    bp->bp_polarity_file = NULL;
+  }
+  return BPRC_OK;
 }
 
 /**
@@ -456,11 +457,11 @@ bbb_pwm_unclaim(struct bbb_pwm_t* bp)
  *
  * @return True/False is the pwm unclaimed.
  */
-int 
-bbb_pwm_is_unclaimed(struct bbb_pwm_t* bp)
+int
+bbb_pwm_is_unclaimed(struct bbb_pwm_t *bp)
 {
-	assert(bp != NULL);
-	return bp->bp_state == BPS_UNCLAIMED;
+  assert(bp != NULL);
+  return bp->bp_state == BPS_UNCLAIMED;
 }
 
 /**
@@ -471,10 +472,10 @@ bbb_pwm_is_unclaimed(struct bbb_pwm_t* bp)
  * @return True/False if we have claimership.
  */
 int
-bbb_pwm_is_claimed(struct bbb_pwm_t* bp)
+bbb_pwm_is_claimed(struct bbb_pwm_t *bp)
 {
-	assert(bp != NULL);
-	return bp->bp_state == BPS_CLAIMED;
+  assert(bp != NULL);
+  return bp->bp_state == BPS_CLAIMED;
 }
 
 /**
@@ -486,35 +487,35 @@ bbb_pwm_is_claimed(struct bbb_pwm_t* bp)
  *
  * @return A status code.
  */
-int 
-bbb_pwm_set_duty_cycle(struct bbb_pwm_t* bp, uint32_t duty_cycle)
+int
+bbb_pwm_set_duty_cycle(struct bbb_pwm_t *bp, uint32_t duty_cycle)
 {
-	uint32_t period;
-	int result;
-	assert(bp != NULL);
+  uint32_t period;
+  int result;
+  assert(bp != NULL);
 
-	if(!bbb_pwm_is_claimed(bp)) {
-		return BPRC_NOT_CLAIMED;
-	}
+  if(!bbb_pwm_is_claimed(bp)) {
+    return BPRC_NOT_CLAIMED;
+  }
 
-	result = bbb_pwm_get_period(bp, &period);
-	if(result != BPRC_OK)	{
-		return result;
-	}
+  result = bbb_pwm_get_period(bp, &period);
+  if(result != BPRC_OK)	{
+    return result;
+  }
 
-	// duty cycle must be less than or equal to period.
-	if(duty_cycle > period) {
-		return BPRC_RANGE;
-	}
+  // duty cycle must be less than or equal to period.
+  if(duty_cycle > period) {
+    return BPRC_RANGE;
+  }
 
-	// Write the data.
-	result = file_write_uint32(bp->bp_duty_file, duty_cycle);
-	if(result != BPRC_OK) {
-		return result;
-	}
+  // Write the data.
+  result = file_write_uint32(bp->bp_duty_file, duty_cycle);
+  if(result != BPRC_OK) {
+    return result;
+  }
 
-	bp->bp_duty_cycle = duty_cycle;
-	return BPRC_OK;
+  bp->bp_duty_cycle = duty_cycle;
+  return BPRC_OK;
 }
 
 /**
@@ -524,25 +525,25 @@ bbb_pwm_set_duty_cycle(struct bbb_pwm_t* bp, uint32_t duty_cycle)
  * @param bp The pwm to set.
  * @param period The period to set it to.
  *
- * @return A status code. 
+ * @return A status code.
  */
-int 
-bbb_pwm_set_period(struct bbb_pwm_t* bp, uint32_t period)
+int
+bbb_pwm_set_period(struct bbb_pwm_t *bp, uint32_t period)
 {
-	int result;
-	assert(bp != NULL);
+  int result;
+  assert(bp != NULL);
 
-	if(!bbb_pwm_is_claimed(bp)) {
-		return BPRC_NOT_CLAIMED;
-	}
+  if(!bbb_pwm_is_claimed(bp)) {
+    return BPRC_NOT_CLAIMED;
+  }
 
-	result = file_write_uint32(bp->bp_period_file, period);
-	if(result != BPRC_OK) {
-		return result;
-	}
+  result = file_write_uint32(bp->bp_period_file, period);
+  if(result != BPRC_OK) {
+    return result;
+  }
 
-	bp->bp_period = period;
-	return BPRC_OK;
+  bp->bp_period = period;
+  return BPRC_OK;
 }
 
 /**
@@ -554,65 +555,65 @@ bbb_pwm_set_period(struct bbb_pwm_t* bp, uint32_t period)
  *
  * @return A status code.
  */
-int 
-bbb_pwm_set_polarity(struct bbb_pwm_t* bp, int8_t polarity)
+int
+bbb_pwm_set_polarity(struct bbb_pwm_t *bp, int8_t polarity)
 {
-	int result;
-	assert(bp != NULL);
+  int result;
+  assert(bp != NULL);
 
-	if(!bbb_pwm_is_claimed(bp)) {
-		return BPRC_NOT_CLAIMED;
-	}
+  if(!bbb_pwm_is_claimed(bp)) {
+    return BPRC_NOT_CLAIMED;
+  }
 
-	// TODO: Do I need to disable the pwm first?
-	// https://www.kernel.org/doc/Documentation/pwm.txt
+  // TODO: Do I need to disable the pwm first?
+  // https://www.kernel.org/doc/Documentation/pwm.txt
 
-	if(polarity != -1 && polarity != 1) {
-		// TODO Verify these limits.
-		return BPRC_RANGE;
-	}
+  if(polarity != -1 && polarity != 1) {
+    // TODO Verify these limits.
+    return BPRC_RANGE;
+  }
 
-	result = file_write_uint32(bp->bp_polarity_file, polarity);
-	if(result != BPRC_OK) {
-		return result;
-	}
+  result = file_write_uint32(bp->bp_polarity_file, polarity);
+  if(result != BPRC_OK) {
+    return result;
+  }
 
-	bp->bp_polarity = polarity;
-	return BPRC_OK;
+  bp->bp_polarity = polarity;
+  return BPRC_OK;
 }
 
 /**
- * @brief Set the duty percentage or throttle of a pwm. 
+ * @brief Set the duty percentage or throttle of a pwm.
  *
  * @param bp The pwm to set.
  * @param percent The percentage to set the duty to.
  *
  * @return A status code.
  */
-int 
-bbb_pwm_set_duty_percent(struct bbb_pwm_t* bp, float percent)
+int
+bbb_pwm_set_duty_percent(struct bbb_pwm_t *bp, float percent)
 {
-	uint32_t duty_cycle, period;
-	int result;
-	assert(bp != NULL);
+  uint32_t duty_cycle, period;
+  int result;
+  assert(bp != NULL);
 
-	if(!bbb_pwm_is_claimed(bp)) {
-		return BPRC_NOT_CLAIMED;
-	}
+  if(!bbb_pwm_is_claimed(bp)) {
+    return BPRC_NOT_CLAIMED;
+  }
 
-	if(percent < 0.0f || percent > 100.0f) {
-		return BPRC_RANGE;
-	}
+  if(percent < 0.0f || percent > 100.0f) {
+    return BPRC_RANGE;
+  }
 
-	result = bbb_pwm_get_period(bp, &period);
-	if(result != BPRC_OK) {
-		return result;
-	}
-	// We need to invert the percentage.
-	// 0 Should be FULL STOP 100 should be FULL SPEED
-	duty_cycle = (uint32_t)(((float) period) * (percent / 100.0f)); 
+  result = bbb_pwm_get_period(bp, &period);
+  if(result != BPRC_OK) {
+    return result;
+  }
+  // We need to invert the percentage.
+  // 0 Should be FULL STOP 100 should be FULL SPEED
+  duty_cycle = (uint32_t)(((float) period) * (percent / 100.0f));
 
-	return bbb_pwm_set_duty_cycle(bp, duty_cycle);
+  return bbb_pwm_set_duty_cycle(bp, duty_cycle);
 }
 
 /**
@@ -623,42 +624,42 @@ bbb_pwm_set_duty_percent(struct bbb_pwm_t* bp, float percent)
  *
  * @return A status code.
  */
-int 
-bbb_pwm_set_frequency(struct bbb_pwm_t* bp, uint32_t hertz)
+int
+bbb_pwm_set_frequency(struct bbb_pwm_t *bp, uint32_t hertz)
 {
-	int result;
-	uint32_t period;
-	uint32_t duty;
+  int result;
+  uint32_t period;
+  uint32_t duty;
 
-	assert(bp != NULL);
+  assert(bp != NULL);
 
-	if(!bbb_pwm_is_claimed(bp)) {
-		return BPRC_NOT_CLAIMED;
-	}
+  if(!bbb_pwm_is_claimed(bp)) {
+    return BPRC_NOT_CLAIMED;
+  }
 
-	// period can't be less than 1
-	// rule out divide by zero.
-	if(hertz > 1e9 || hertz <= 0) {
-		return BPRC_RANGE;
-	}
+  // period can't be less than 1
+  // rule out divide by zero.
+  if(hertz > 1e9 || hertz <= 0) {
+    return BPRC_RANGE;
+  }
 
-	// Convert hertz to period in nanoseconds.
-	period = 1e9 / hertz;
+  // Convert hertz to period in nanoseconds.
+  period = 1e9 / hertz;
 
-	result = bbb_pwm_get_duty_cycle(bp, &duty);
-	if(result != BPRC_OK) {
-		return result;
-	}
+  result = bbb_pwm_get_duty_cycle(bp, &duty);
+  if(result != BPRC_OK) {
+    return result;
+  }
 
-	// Duty can't exceede period.
-	// Duty should probably be throttled to zero first!
-	// Weird shit might happen :/
-	if(period < duty) {
-		return BPRC_RANGE;
-	}
+  // Duty can't exceede period.
+  // Duty should probably be throttled to zero first!
+  // Weird shit might happen :/
+  if(period < duty) {
+    return BPRC_RANGE;
+  }
 
-	// Set the new period.
-	return bbb_pwm_set_period(bp, period);
+  // Set the new period.
+  return bbb_pwm_set_period(bp, period);
 }
 
 /**
@@ -671,211 +672,211 @@ bbb_pwm_set_frequency(struct bbb_pwm_t* bp, uint32_t hertz)
  *
  * @return A status code.
  */
-int 
-bbb_pwm_get_duty_cycle(struct bbb_pwm_t* bp, uint32_t* out_duty)
+int
+bbb_pwm_get_duty_cycle(struct bbb_pwm_t *bp, uint32_t *out_duty)
 {
-	FILE* duty_file = NULL;
-	int result = BPRC_OK;
+  FILE *duty_file = NULL;
+  int result = BPRC_OK;
 
-	assert(bp != NULL);
-	assert(out_duty != NULL);
+  assert(bp != NULL);
+  assert(out_duty != NULL);
 
-	if(bbb_pwm_is_claimed(bp)) {
-		// Value was cached.
-		*out_duty = bp->bp_duty_cycle;
-		goto out;
-	}
+  if(bbb_pwm_is_claimed(bp)) {
+    // Value was cached.
+    *out_duty = bp->bp_duty_cycle;
+    goto out;
+  }
 
-	duty_file = fopen(bp->bp_duty_file_path, "r");
-	if(duty_file == NULL) {
-		result = BPRC_BUSY;
-		goto out;
-	}
+  duty_file = fopen(bp->bp_duty_file_path, "r");
+  if(duty_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
 
-	result = file_read_uint32(duty_file, out_duty);
+  result = file_read_uint32(duty_file, out_duty);
 out:
-	if(duty_file != NULL) {
-		fclose(duty_file);
-	}
-	return result;
+  if(duty_file != NULL) {
+    fclose(duty_file);
+  }
+  return result;
 }
 
 /**
  * @brief Gets the period of a pwm.
  * If the pwm isn't claimed, we attempt to open the right file for reading.
  * Note that this may fail if someone else owns it.
- * 
+ *
  * @param bp The pwm to read from.
  * @param[out] out_period The period read.
- * 
+ *
  * @return A status code.
  */
-int 
-bbb_pwm_get_period(struct bbb_pwm_t* bp, uint32_t* out_period)
+int
+bbb_pwm_get_period(struct bbb_pwm_t *bp, uint32_t *out_period)
 {
-	FILE* period_file = NULL;
-	int result = BPRC_OK;
+  FILE *period_file = NULL;
+  int result = BPRC_OK;
 
-	assert(bp != NULL);
-	assert(out_period != NULL);
+  assert(bp != NULL);
+  assert(out_period != NULL);
 
-	if(bbb_pwm_is_claimed(bp)) {
-		*out_period = bp->bp_period;
-		goto out;
-	}
+  if(bbb_pwm_is_claimed(bp)) {
+    *out_period = bp->bp_period;
+    goto out;
+  }
 
-	period_file = fopen(bp->bp_period_file_path, "r");
-	if(period_file == NULL) {
-		result = BPRC_BUSY;
-		goto out;
-	}
+  period_file = fopen(bp->bp_period_file_path, "r");
+  if(period_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
 
-	result = file_read_uint32(period_file, out_period);
+  result = file_read_uint32(period_file, out_period);
 out:
-	if(period_file != NULL) {
-		fclose(period_file);
-	}
-	return result;
+  if(period_file != NULL) {
+    fclose(period_file);
+  }
+  return result;
 }
 
 /**
- * @brief Gets the polarity of a pwm. 
+ * @brief Gets the polarity of a pwm.
  * If the pwm isn't claimed, we attempt to open the right file for reading.
  * Note that this may fail if someone else owns it.
  *
- * @param bp The pwm to read from. 
+ * @param bp The pwm to read from.
  * @param[out] out_polarity The polarity read.
  *
  * @return A status code.
  */
-int 
-bbb_pwm_get_polarity(struct bbb_pwm_t* bp, int8_t* out_polarity)
+int
+bbb_pwm_get_polarity(struct bbb_pwm_t *bp, int8_t *out_polarity)
 {
-	FILE* polarity_file = NULL;
-	int result = BPRC_OK;
+  FILE *polarity_file = NULL;
+  int result = BPRC_OK;
 
-	assert(bp != NULL);
-	assert(out_polarity != NULL);
+  assert(bp != NULL);
+  assert(out_polarity != NULL);
 
-	if(bbb_pwm_is_claimed(bp)) {
-		*out_polarity = bp->bp_polarity;
-		goto out;
-	}
+  if(bbb_pwm_is_claimed(bp)) {
+    *out_polarity = bp->bp_polarity;
+    goto out;
+  }
 
-	polarity_file = fopen(bp->bp_polarity_file_path, "r");
-	if(polarity_file == NULL) {
-		result = BPRC_BUSY;
-		goto out;
-	}
+  polarity_file = fopen(bp->bp_polarity_file_path, "r");
+  if(polarity_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
 
-	result = file_read_int8(polarity_file, out_polarity);
+  result = file_read_int8(polarity_file, out_polarity);
 out:
-	if(polarity_file != NULL) {
-		fclose(polarity_file);
-	}
-	return result;
+  if(polarity_file != NULL) {
+    fclose(polarity_file);
+  }
+  return result;
 }
 
 /**
- * @brief Get the current duty percent, or throttle from the pwm. 
+ * @brief Get the current duty percent, or throttle from the pwm.
  *
  * @param bp The pwm to read from.
- * @param[out] out_percent The percentage calcualted from 
+ * @param[out] out_percent The percentage calcualted from
  * the period and duty cycle.
  *
  * @return A status code.
  */
-int 
-bbb_pwm_get_duty_percent(struct bbb_pwm_t* bp, float* out_percent)
+int
+bbb_pwm_get_duty_percent(struct bbb_pwm_t *bp, float *out_percent)
 {
-	uint32_t duty, period;
-	int result;
+  uint32_t duty, period;
+  int result;
 
-	result = bbb_pwm_get_period(bp, &period);
-	if(result != BPRC_OK) {
-		return result;
-	}
+  result = bbb_pwm_get_period(bp, &period);
+  if(result != BPRC_OK) {
+    return result;
+  }
 
-	result = bbb_pwm_get_duty_cycle(bp, &duty);
-	if(result != BPRC_OK) {
-		return result;
-	}
+  result = bbb_pwm_get_duty_cycle(bp, &duty);
+  if(result != BPRC_OK) {
+    return result;
+  }
 
-	*out_percent = ((float) duty / (float) period) * 100.0f;
-	return BPRC_OK;
+  *out_percent = ((float) duty / (float) period) * 100.0f;
+  return BPRC_OK;
 }
 
 /**
- * @brief Get the current frequncy of the period in hertz. 
+ * @brief Get the current frequncy of the period in hertz.
  *
  * @param bp The pwm to read from.
  * @param[out] out_hertz The hertz calculated from the period.
  *
  * @return A status code.
  */
-int 
-bbb_pwm_get_frequency(struct bbb_pwm_t* bp, uint32_t* out_hertz)
+int
+bbb_pwm_get_frequency(struct bbb_pwm_t *bp, uint32_t *out_hertz)
 {
-	uint32_t period;
-	int result;
+  uint32_t period;
+  int result;
 
-	result = bbb_pwm_get_period(bp, &period);
-	if(result != BPRC_OK) {
-		return result;
-	}
+  result = bbb_pwm_get_period(bp, &period);
+  if(result != BPRC_OK) {
+    return result;
+  }
 
-	// Convert nanoseconds to hertz.
-	*out_hertz = 1e9 / period;
-	return BPRC_OK;
+  // Convert nanoseconds to hertz.
+  *out_hertz = 1e9 / period;
+  return BPRC_OK;
 }
 
 /**
  * @brief Open a file and then set a lock on it.
- * Fail if we can't get a lock. 
+ * Fail if we can't get a lock.
  *
  * @param path The path to the file we are getting and locking.
  *
  * @return A FILE* if we could lock and open the file, else NULL.
  */
-FILE* 
-file_open_and_claim(const char* path, const char* mode)
+FILE *
+file_open_and_claim(const char *path, const char *mode)
 {
-	struct flock lock;
-	FILE* file;
-	int fd;
+  struct flock lock;
+  FILE *file;
+  int fd;
 
-	file = fopen(path, mode);
-	if(file == NULL) {
-		// Failed to open the file!
-		return NULL;
-	}
+  file = fopen(path, mode);
+  if(file == NULL) {
+    // Failed to open the file!
+    return NULL;
+  }
 
-	fd = fileno(file);
-	if(fd < 0) {
-		// Failed to get the file descriptor.
-		fclose(file);
-		return NULL;
-	}
+  fd = fileno(file);
+  if(fd < 0) {
+    // Failed to get the file descriptor.
+    fclose(file);
+    return NULL;
+  }
 
-	// Lock the whole file.
-	lock.l_whence = SEEK_SET;
-	lock.l_start = 0;
-	lock.l_len = 0;
+  // Lock the whole file.
+  lock.l_whence = SEEK_SET;
+  lock.l_start = 0;
+  lock.l_len = 0;
 
-	// Figure out the lock type.
-	if(file_can_write(file)) {
-		lock.l_type = F_WRLCK;
-	} else {
-		lock.l_type = F_RDLCK;
-	}
+  // Figure out the lock type.
+  if(file_can_write(file)) {
+    lock.l_type = F_WRLCK;
+  } else {
+    lock.l_type = F_RDLCK;
+  }
 
-	if(fcntl(fd, F_SETLK, &lock) < 0) {
-		// Failed to lock the file.
-		fclose(file);	
-		return NULL;
-	}
+  if(fcntl(fd, F_SETLK, &lock) < 0) {
+    // Failed to lock the file.
+    fclose(file);
+    return NULL;
+  }
 
-	return file;
+  return file;
 }
 
 /**
@@ -883,112 +884,112 @@ file_open_and_claim(const char* path, const char* mode)
  *
  * @param file The file to close and then unlock.
  */
-void 
-file_close_and_unclaim(FILE* file)
+void
+file_close_and_unclaim(FILE *file)
 {
-	int fd;
-	struct flock unlock;
+  int fd;
+  struct flock unlock;
 
-	if(file == NULL) {
-		return;
-	}
+  if(file == NULL) {
+    return;
+  }
 
-	fd = fileno(file);
-	if(fd < 0) {
-		return;
-	}
+  fd = fileno(file);
+  if(fd < 0) {
+    return;
+  }
 
-	// Unlock the whole file.
-	unlock.l_whence = SEEK_SET;
-	unlock.l_start = 0;
-	unlock.l_len = 0;
+  // Unlock the whole file.
+  unlock.l_whence = SEEK_SET;
+  unlock.l_start = 0;
+  unlock.l_len = 0;
 
-	unlock.l_type = F_UNLCK;
+  unlock.l_type = F_UNLCK;
 
-	// Unlock the file (If we had a claim on it.)
-	fcntl(fd, F_SETLK, &unlock);
+  // Unlock the file (If we had a claim on it.)
+  fcntl(fd, F_SETLK, &unlock);
 
-	// Close the file.
-	fclose(file);
+  // Close the file.
+  fclose(file);
 }
 
 /**
- * @brief Check to see if we can write to a file. 
+ * @brief Check to see if we can write to a file.
  *
  * @param file The FILE* to check.
  *
  * @return True/False can we write to the file.
  */
-int 
-file_can_write(FILE* file)
+int
+file_can_write(FILE *file)
 {
-	int fd, mode;
-	if(file == NULL) {
-		return 0;
-	}
+  int fd, mode;
+  if(file == NULL) {
+    return 0;
+  }
 
-	fd = fileno(file);
-	if(fd < 0) {
-		return 0;
-	}
+  fd = fileno(file);
+  if(fd < 0) {
+    return 0;
+  }
 
-	mode = fcntl(fd, F_GETFL); 
-	return ((mode & O_WRONLY) == O_WRONLY) || ((mode & O_RDWR) == O_RDWR);
+  mode = fcntl(fd, F_GETFL);
+  return ((mode & O_WRONLY) == O_WRONLY) || ((mode & O_RDWR) == O_RDWR);
 }
 
 /**
- * @brief Check to see if we can read from a file. 
+ * @brief Check to see if we can read from a file.
  *
  * @param file THe FILE* to check.
  *
  * @return True/False can we read from a file.
  */
-int 
-file_can_read(FILE* file)
+int
+file_can_read(FILE *file)
 {
-	int fd, mode;
-	if(file == NULL) {
-		return 0;
-	}
+  int fd, mode;
+  if(file == NULL) {
+    return 0;
+  }
 
-	fd = fileno(file);
-	if(fd < 0) {
-		return 0;
-	}
+  fd = fileno(file);
+  if(fd < 0) {
+    return 0;
+  }
 
-	mode = fcntl(fd, F_GETFL);
-	return ((mode & O_WRONLY) != O_WRONLY) || ((mode & O_RDWR) == O_RDWR);
+  mode = fcntl(fd, F_GETFL);
+  return ((mode & O_WRONLY) != O_WRONLY) || ((mode & O_RDWR) == O_RDWR);
 }
 
 /**
- * @brief Reads an uint32 from a file. 
+ * @brief Reads an uint32 from a file.
  *
  * @param file The file to read from.
  * @param[out] out_data The uint32 if successful.
  *
  * @return A status code.
  */
-int 
-file_read_uint32(FILE* file, uint32_t* out_data)
+int
+file_read_uint32(FILE *file, uint32_t *out_data)
 {
-	int result;
-	if(file == NULL || out_data == NULL) {
-		return BPRC_NULL_PTR;
-	}
-	if(!file_can_read(file)) {
-		return BPRC_BAD_FILE;
-	}
-	// Set to 0
-	result = fseek(file, 0, SEEK_SET);
-	if(result != 0) {
-		return BPRC_BAD_FILE;
-	}
-	// Read the data.	
-	result = fscanf(file, "%"PRIu32"", out_data);
-	if(result < 0) {
-		return BPRC_NO_DATA;
-	}
-	return BPRC_OK;
+  int result;
+  if(file == NULL || out_data == NULL) {
+    return BPRC_NULL_PTR;
+  }
+  if(!file_can_read(file)) {
+    return BPRC_BAD_FILE;
+  }
+  // Set to 0
+  result = fseek(file, 0, SEEK_SET);
+  if(result != 0) {
+    return BPRC_BAD_FILE;
+  }
+  // Read the data.
+  result = fscanf(file, "%"PRIu32"", out_data);
+  if(result < 0) {
+    return BPRC_NO_DATA;
+  }
+  return BPRC_OK;
 }
 
 /**
@@ -999,27 +1000,27 @@ file_read_uint32(FILE* file, uint32_t* out_data)
  *
  * @return A status code.
  */
-int 
-file_read_int8(FILE* file, int8_t* out_data)
+int
+file_read_int8(FILE *file, int8_t *out_data)
 {
-	int result;
-	if(file == NULL || out_data == NULL) {
-		return BPRC_NULL_PTR;
-	}
-	if(!file_can_read(file)) {
-		return BPRC_BAD_FILE;
-	}
-	// Set to 0
-	result = fseek(file, 0, SEEK_SET);
-	if(result != 0) {
-		return BPRC_BAD_FILE;
-	}
-	// Read the data.	
-	result = fscanf(file, "%"SCNd8"", out_data);
-	if(result < 0) {
-		return BPRC_NO_DATA;
-	}
-	return BPRC_OK;
+  int result;
+  if(file == NULL || out_data == NULL) {
+    return BPRC_NULL_PTR;
+  }
+  if(!file_can_read(file)) {
+    return BPRC_BAD_FILE;
+  }
+  // Set to 0
+  result = fseek(file, 0, SEEK_SET);
+  if(result != 0) {
+    return BPRC_BAD_FILE;
+  }
+  // Read the data.
+  result = fscanf(file, "%"SCNd8"", out_data);
+  if(result < 0) {
+    return BPRC_NO_DATA;
+  }
+  return BPRC_OK;
 }
 
 /**
@@ -1031,53 +1032,53 @@ file_read_int8(FILE* file, int8_t* out_data)
  * @return A status code.
  */
 int
-file_write_uint32(FILE* file, uint32_t data)
+file_write_uint32(FILE *file, uint32_t data)
 {
-	int result;
-	if(file == NULL) {
-		return BPRC_BAD_FILE;
-	}
-	if(!file_can_write(file)) {
-		return BPRC_BAD_FILE;
-	}
-	// Truncate the file.
-	if(freopen(NULL, "w+", file) == NULL) {
-		return BPRC_BAD_FILE;
-	}
-	// Write the data
-	result = fprintf(file, "%"PRIu32"", data);
-	if(result <= 0) {
-		return BPRC_BAD_WRITE;
-	}
-	return BPRC_OK;
+  int result;
+  if(file == NULL) {
+    return BPRC_BAD_FILE;
+  }
+  if(!file_can_write(file)) {
+    return BPRC_BAD_FILE;
+  }
+  // Truncate the file.
+  if(freopen(NULL, "w+", file) == NULL) {
+    return BPRC_BAD_FILE;
+  }
+  // Write the data
+  result = fprintf(file, "%"PRIu32"", data);
+  if(result <= 0) {
+    return BPRC_BAD_WRITE;
+  }
+  return BPRC_OK;
 }
 
 /**
- * @brief Write an int8 to a file. 
+ * @brief Write an int8 to a file.
  *
  * @param file The file to write to.
  * @param data THe int8 to write.
  *
  * @return A status code.
  */
-int 
-file_write_int8(FILE* file, int8_t data)
+int
+file_write_int8(FILE *file, int8_t data)
 {
-	int result;
-	if(file == NULL) {
-		return BPRC_BAD_FILE;
-	}
-	if(!file_can_write(file)) {
-		return BPRC_BAD_FILE;
-	}
-	// Truncate the file.
-	if(freopen(NULL, "w+", file) == NULL) {
-		return BPRC_BAD_FILE;
-	}
-	// Write the data
-	result = fprintf(file, "%"PRId8"", data);
-	if(result <= 0) {
-		return BPRC_BAD_WRITE;	
-	}
-	return BPRC_OK;
+  int result;
+  if(file == NULL) {
+    return BPRC_BAD_FILE;
+  }
+  if(!file_can_write(file)) {
+    return BPRC_BAD_FILE;
+  }
+  // Truncate the file.
+  if(freopen(NULL, "w+", file) == NULL) {
+    return BPRC_BAD_FILE;
+  }
+  // Write the data
+  result = fprintf(file, "%"PRId8"", data);
+  if(result <= 0) {
+    return BPRC_BAD_WRITE;
+  }
+  return BPRC_OK;
 }

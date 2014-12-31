@@ -24,13 +24,13 @@
 #include <string.h>
 
 struct bbb_capemgr_t {
-	char 				 *bc_capemgr_path;
-	char 				 *bc_slots_path;
-	struct udev  *bc_udev;
+  char 				 *bc_capemgr_path;
+  char 				 *bc_slots_path;
+  struct udev  *bc_udev;
 };
 
-int bbb_capemgr_init(struct bbb_capemgr_t* bc);
-int bbb_capemgr_find(struct bbb_capemgr_t* bc, char* dev, int* out_devid);
+int bbb_capemgr_init(struct bbb_capemgr_t *bc);
+int bbb_capemgr_find(struct bbb_capemgr_t *bc, char *dev, int *out_devid);
 
-char* bbb_capemgr_find_path(struct bbb_capemgr_t* bc);
+char *bbb_capemgr_find_path(struct bbb_capemgr_t *bc);
 #endif /* BBB_CAPEMGR_INTERNAL_H */

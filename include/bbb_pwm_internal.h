@@ -32,66 +32,66 @@
  * @brief Represents a detected pwm.
  */
 struct bbb_pwm_t {
-	
-	/**
-	 * @brief The current state of the pwm.
-	 */
-	enum bbb_pwm_state_e    bp_state;
 
-	/**
-	 * @brief The name of this pwm.
-	 */
-	char 									 *bp_name;
+  /**
+   * @brief The current state of the pwm.
+   */
+  enum bbb_pwm_state_e    bp_state;
 
-	/**
-	 * @brief The cached pwm duty cycle. 
-	 */
-	uint32_t 								bp_duty_cycle;
+  /**
+   * @brief The name of this pwm.
+   */
+  char 									 *bp_name;
 
-	/**
-	 * @brief The cached pwm period (in nanoseconds).
-	 */
-	uint32_t 								bp_period;
+  /**
+   * @brief The cached pwm duty cycle.
+   */
+  uint32_t 								bp_duty_cycle;
 
-	/**
-	 * @brief The cached pwm polarity.
-	 */
-	int8_t 									bp_polarity;
+  /**
+   * @brief The cached pwm period (in nanoseconds).
+   */
+  uint32_t 								bp_period;
 
-	/**
-	 * @brief The file path of the duty file.
-	 */
-	char 									 *bp_duty_file_path;
+  /**
+   * @brief The cached pwm polarity.
+   */
+  int8_t 									bp_polarity;
 
-	/**
-	 * @brief The file path of the period file.
-	 */
-	char 									 *bp_period_file_path;
+  /**
+   * @brief The file path of the duty file.
+   */
+  char 									 *bp_duty_file_path;
 
-	/**
-	 * @brief The file path of the polarity file.
-	 */
-	char 									 *bp_polarity_file_path;
+  /**
+   * @brief The file path of the period file.
+   */
+  char 									 *bp_period_file_path;
 
-	/**
-	 * @brief The file with the pwm's duty data.
-	 */
-	FILE 									 *bp_duty_file;
+  /**
+   * @brief The file path of the polarity file.
+   */
+  char 									 *bp_polarity_file_path;
 
-	/**
-	 * @brief The file with the pwm's period data.
-	 */
-	FILE 									 *bp_period_file;
+  /**
+   * @brief The file with the pwm's duty data.
+   */
+  FILE 									 *bp_duty_file;
 
-	/**
-	 * @brief The file with the pwm's polarity data.
-	 */
-	FILE 									 *bp_polarity_file;
+  /**
+   * @brief The file with the pwm's period data.
+   */
+  FILE 									 *bp_period_file;
 
-	/**
-	 * @brief The next PWM in the list of PWMs, NULL signifies the end.
-	 */
-	struct bbb_pwm_t		 	 *bp_next;
+  /**
+   * @brief The file with the pwm's polarity data.
+   */
+  FILE 									 *bp_polarity_file;
+
+  /**
+   * @brief The next PWM in the list of PWMs, NULL signifies the end.
+   */
+  struct bbb_pwm_t		 	 *bp_next;
 };
 
 /**
@@ -99,43 +99,43 @@ struct bbb_pwm_t {
  * It also detects pwms and makes them avaliable for use.
  */
 struct bbb_pwm_controller_t {
-	
-	/**
-	 * @brief The number of pwms detected.
-	 */
-	int8_t 									bpc_num_pwms;
 
-	/**
-	 * @brief The individual pwms.
-	 */
-	struct bbb_pwm_t 	 		 *bpc_head_pwm;
+  /**
+   * @brief The number of pwms detected.
+   */
+  int8_t 									bpc_num_pwms;
 
-	/**
-	 * @brief The capemanager.
-	 */
-	struct bbb_capemgr_t 	 *bpc_capemgr;
+  /**
+   * @brief The individual pwms.
+   */
+  struct bbb_pwm_t 	 		 *bpc_head_pwm;
+
+  /**
+   * @brief The capemanager.
+   */
+  struct bbb_capemgr_t 	 *bpc_capemgr;
 };
 
-int bbb_pwm_controller_init(struct bbb_pwm_controller_t* bpc);
-int bbb_pwm_controller_add_pwm(struct bbb_pwm_controller_t* bpc,
-		struct bbb_pwm_t* bp);
-int bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t* bpc,
-	 	const char* name);
-int bbb_pwm_controller_probe(struct bbb_pwm_controller_t* bpc);
+int bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc);
+int bbb_pwm_controller_add_pwm(struct bbb_pwm_controller_t *bpc,
+                               struct bbb_pwm_t *bp);
+int bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t *bpc,
+                                  const char *name);
+int bbb_pwm_controller_probe(struct bbb_pwm_controller_t *bpc);
 
-struct bbb_pwm_t* bbb_pwm_new(const char* name, const char* root_path);
-void bbb_pwm_delete(struct bbb_pwm_t** bp_ptr);
+struct bbb_pwm_t *bbb_pwm_new(const char *name, const char *root_path);
+void bbb_pwm_delete(struct bbb_pwm_t **bp_ptr);
 
-int file_read_uint32(FILE* file, uint32_t* out_data);
-int file_read_int8(FILE* file, int8_t* out_data);
+int file_read_uint32(FILE *file, uint32_t *out_data);
+int file_read_int8(FILE *file, int8_t *out_data);
 
-int file_write_uint32(FILE* file, uint32_t data);
-int file_write_int8(FILE* file, int8_t data);
+int file_write_uint32(FILE *file, uint32_t data);
+int file_write_int8(FILE *file, int8_t data);
 
-int file_can_write(FILE* file);
-int file_can_read(FILE* file);
+int file_can_write(FILE *file);
+int file_can_read(FILE *file);
 
-FILE* file_open_and_claim(const char* path, const char* mode);
-void file_close_and_unclaim(FILE* file);
+FILE *file_open_and_claim(const char *path, const char *mode);
+void file_close_and_unclaim(FILE *file);
 
 #endif /* BBB_PWM_INTERNAL_H */
