@@ -22,7 +22,8 @@
 #include <string.h>
 #include <inttypes.h>
 #include <unistd.h>
-#include "../include/bbb_pwm_internal.h"
+
+#include <bbb_pwm_internal.h>
 
 /**
  * @brief Create a new controller.
@@ -141,7 +142,7 @@ bbb_pwm_controller_probe(struct bbb_pwm_controller_t *bpc)
     if(!bbb_pwm_controller_has_pwm(bpc, name)) {
       struct bbb_pwm_t *pwm;
       // Make a new pwm and add it.
-			pwm = bbb_pwm_new(name, path);
+      pwm = bbb_pwm_new(name, path);
       bbb_pwm_controller_add_pwm(bpc, pwm);
     }
   }
@@ -363,807 +364,875 @@ bbb_pwm_controller_get_pwm(struct bbb_pwm_controller_t *bpc,
     assert(cur != NULL);
   }
 
-	return NULL;
+  return NULL;
 }
-  /**
-   * @brief Creates a new bbb_pwm_t.
-   *
-   * @param name The name of the new pwm.
-   *
-   * @return A new pwm or NULL on failure.
-   */
-  struct bbb_pwm_t *
-  bbb_pwm_new(const char * name, const char * root_path) {
-    int result;
-    struct bbb_pwm_t *bp;
-    if(name == NULL || root_path == NULL) {
-      // Fail for bad setup.
-      return NULL;
-    }
 
-    bp = calloc(sizeof(struct bbb_pwm_t), 1);
-    assert(bp != NULL);
+/**
+ * @brief Get the first pwm in the list of pwms.
+ *
+ * @param bpc The controller to get the pwm from.
+ *
+ * @return The first pwm in the list or NULL if there are none.
+ */
+struct bbb_pwm_t *
+bbb_pwm_controller_get_head_pwm(
+  struct bbb_pwm_controller_t *bpc)
+{
+	assert(bpc != NULL);
+	return bpc->bpc_head_pwm;
+}
 
-    // Initially we are unclaimed.
-    bp->bp_state = BPS_UNCLAIMED;
-    // Copy the name
-    bp->bp_name = (char *) strdup(name);
-    if(bp->bp_name == NULL) {
-      bbb_pwm_delete(&bp);
-      goto out;
-    }
-    // Setup our paths.
-    result = asprintf(&(bp->bp_duty_file_path),
-                      "%s/%s", root_path, "duty");
-    if(result < 0) {
-      bbb_pwm_delete(&bp);
-      goto out;
-    }
-    result = asprintf(&(bp->bp_period_file_path),
-                      "%s/%s", root_path, "period");
-    if(result < 0) {
-      bbb_pwm_delete(&bp);
-      goto out;
-    }
-
-    result = asprintf(&(bp->bp_polarity_file_path),
-                      "%s/%s", root_path, "polarity");
-    if(result < 0) {
-      bbb_pwm_delete(&bp);
-      goto out;
-    }
-
-out:
-    return bp;
+/**
+ * @brief Creates a new bbb_pwm_t.
+ *
+ * @param name The name of the new pwm.
+ *
+ * @return A new pwm or NULL on failure.
+ */
+struct bbb_pwm_t *
+bbb_pwm_new(const char *name, const char *root_path)
+{
+  int result;
+  struct bbb_pwm_t *bp;
+  if(name == NULL || root_path == NULL) {
+    // Fail for bad setup.
+    return NULL;
   }
 
-  /**
-   * @brief Deletes a PWM.
-   * This will unclaim if claimed.
-   *
-   * @param bp_ptr The pwm to delete.
-   */
-  void
-  bbb_pwm_delete(struct bbb_pwm_t **bp_ptr) {
-    struct bbb_pwm_t *bp;
-    assert(bp_ptr != NULL);
+  bp = calloc(sizeof(struct bbb_pwm_t), 1);
+  assert(bp != NULL);
 
-    bp = *bp_ptr;
-    if(bp == NULL) {
-      return;
-    }
+  // Initially we are unclaimed.
+  bp->bp_state = BPS_UNCLAIMED;
+  // Copy the name
+  bp->bp_name = (char *) strdup(name);
+  if(bp->bp_name == NULL) {
+    bbb_pwm_delete(&bp);
+    goto out;
+  }
+  // Setup our paths.
+  result = asprintf(&(bp->bp_duty_file_path),
+                    "%s/%s", root_path, "duty");
+  if(result < 0) {
+    bbb_pwm_delete(&bp);
+    goto out;
+  }
+  result = asprintf(&(bp->bp_period_file_path),
+                    "%s/%s", root_path, "period");
+  if(result < 0) {
+    bbb_pwm_delete(&bp);
+    goto out;
+  }
 
-    // Unclaim, since we are freeing.
+  result = asprintf(&(bp->bp_polarity_file_path),
+                    "%s/%s", root_path, "polarity");
+  if(result < 0) {
+    bbb_pwm_delete(&bp);
+    goto out;
+  }
+
+out:
+  return bp;
+}
+
+/**
+ * @brief Deletes a PWM.
+ * This will unclaim if claimed.
+ *
+ * @param bp_ptr The pwm to delete.
+ */
+void
+bbb_pwm_delete(struct bbb_pwm_t **bp_ptr)
+{
+  struct bbb_pwm_t *bp;
+  assert(bp_ptr != NULL);
+
+  bp = *bp_ptr;
+  if(bp == NULL) {
+    return;
+  }
+
+  // Unclaim, since we are freeing.
+  bbb_pwm_unclaim(bp);
+
+  // Free what has been allocated.
+  if(bp->bp_name != NULL) {
+    free(bp->bp_name);
+  }
+
+  if(bp->bp_duty_file_path != NULL) {
+    free(bp->bp_duty_file_path);
+  }
+
+  if(bp->bp_period_file_path != NULL) {
+    free(bp->bp_period_file_path);
+  }
+
+  if(bp->bp_polarity_file_path != NULL) {
+    free(bp->bp_polarity_file_path);
+  }
+
+  free(bp);
+  *bp_ptr = NULL;
+}
+
+/**
+ * @brief Claims a pwm for later setting values.
+ * If someone else has claimed this pwm, we fail and report BUSY.
+ *
+ * @param bp The pwm to claim.
+ *
+ * @return A status code.
+ */
+int
+bbb_pwm_claim(struct bbb_pwm_t *bp)
+{
+  int result = BPRC_OK;
+
+  assert(bp != NULL);
+
+  if(bbb_pwm_is_claimed(bp)) {
+    // We already claimed it.
+    return BPRC_OK;
+  }
+
+  assert(bp->bp_duty_file_path != NULL);
+  assert(bp->bp_period_file_path != NULL);
+  assert(bp->bp_polarity_file_path != NULL);
+
+  // Open the necessary files.
+  bp->bp_duty_file = file_open_and_claim(bp->bp_duty_file_path, "r+");
+  if(bp->bp_duty_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
+
+  bp->bp_period_file = file_open_and_claim(bp->bp_period_file_path, "r+");
+  if(bp->bp_period_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
+
+  bp->bp_polarity_file = file_open_and_claim(bp->bp_polarity_file_path, "r+");
+  if(bp->bp_polarity_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
+
+  // Load the cached values.
+  result = file_read_uint32(bp->bp_duty_file, &(bp->bp_duty_cycle));
+  if(result != BPRC_OK) {
+    goto out;
+  }
+
+  result = file_read_uint32(bp->bp_period_file, &(bp->bp_period));
+  if(result != BPRC_OK) {
+    goto out;
+  }
+
+  result = file_read_int8(bp->bp_polarity_file, &(bp->bp_polarity));
+  if(result != BPRC_OK) {
+    goto out;
+  }
+
+out:
+  if(result != BPRC_OK) {
+    // On failure, unclaim will force a cleanup.
     bbb_pwm_unclaim(bp);
+  } else {
+    bp->bp_state = BPS_CLAIMED;
+  }
+  return result;
+}
 
-    // Free what has been allocated.
-    if(bp->bp_name != NULL) {
-      free(bp->bp_name);
-    }
+/**
+ * @brief Unclaims a pwm.
+ *
+ * @param bp The pwm to unclaim.
+ *
+ * @return A status code.
+ */
+int
+bbb_pwm_unclaim(struct bbb_pwm_t *bp)
+{
+  assert(bp != NULL);
 
-    if(bp->bp_duty_file_path != NULL) {
-      free(bp->bp_duty_file_path);
-    }
+  bp->bp_state = BPS_UNCLAIMED;
+  // Close the duty file.
+  if(bp->bp_duty_file != NULL) {
+    file_close_and_unclaim(bp->bp_duty_file);
+    bp->bp_duty_file = NULL;
+  }
+  // Close the period file.
+  if(bp->bp_period_file != NULL) {
+    file_close_and_unclaim(bp->bp_period_file);
+    bp->bp_period_file = NULL;
+  }
+  // Close the polarity file.
+  if(bp->bp_polarity_file != NULL) {
+    file_close_and_unclaim(bp->bp_polarity_file);
+    bp->bp_polarity_file = NULL;
+  }
+  return BPRC_OK;
+}
 
-    if(bp->bp_period_file_path != NULL) {
-      free(bp->bp_period_file_path);
-    }
+/**
+ * @brief Check to see if the pwm is unclaimed.
+ *
+ * @param bp The pwm to check.
+ *
+ * @return True/False is the pwm unclaimed.
+ */
+int
+bbb_pwm_is_unclaimed(struct bbb_pwm_t *bp)
+{
+  assert(bp != NULL);
+  return bp->bp_state == BPS_UNCLAIMED;
+}
 
-    if(bp->bp_polarity_file_path != NULL) {
-      free(bp->bp_polarity_file_path);
-    }
+/**
+ * @brief Check to see if we have claimership of the pwm.
+ *
+ * @param bp The pwm to check.
+ *
+ * @return True/False if we have claimership.
+ */
+int
+bbb_pwm_is_claimed(struct bbb_pwm_t *bp)
+{
+  assert(bp != NULL);
+  return bp->bp_state == BPS_CLAIMED;
+}
 
-    free(bp);
-    *bp_ptr = NULL;
+/**
+ * @brief Get the next pwm in a sorted list of pwms.
+ *
+ * @param bp The pwm to get the next pwm from.
+ *
+ * @return NULL if there is no next pwm.
+ */
+struct bbb_pwm_t *
+bbb_pwm_get_next_pwm(struct bbb_pwm_t *bp)
+{
+	assert(bp != NULL);
+	return bp->bp_next;
+}
+
+/**
+ * @brief Set the duty of the pwm.
+ * NOTE: The pwm must be claimed to set anything on it.
+ *
+ * @param bp The pwm to set.
+ * @param duty The duty to set the pwm to.
+ *
+ * @return A status code.
+ */
+int
+bbb_pwm_set_duty_cycle(struct bbb_pwm_t *bp, uint32_t duty_cycle)
+{
+  uint32_t period;
+  int result;
+  assert(bp != NULL);
+
+  if(!bbb_pwm_is_claimed(bp)) {
+    return BPRC_NOT_CLAIMED;
   }
 
-  /**
-   * @brief Claims a pwm for later setting values.
-   * If someone else has claimed this pwm, we fail and report BUSY.
-   *
-   * @param bp The pwm to claim.
-   *
-   * @return A status code.
-   */
-  int
-  bbb_pwm_claim(struct bbb_pwm_t * bp) {
-    int result = BPRC_OK;
-
-    assert(bp != NULL);
-
-    if(bbb_pwm_is_claimed(bp)) {
-      // We already claimed it.
-      return BPRC_OK;
-    }
-
-    assert(bp->bp_duty_file_path != NULL);
-    assert(bp->bp_period_file_path != NULL);
-    assert(bp->bp_polarity_file_path != NULL);
-
-    // Open the necessary files.
-    bp->bp_duty_file = file_open_and_claim(bp->bp_duty_file_path, "r+");
-    if(bp->bp_duty_file == NULL) {
-      result = BPRC_BUSY;
-      goto out;
-    }
-
-    bp->bp_period_file = file_open_and_claim(bp->bp_period_file_path, "r+");
-    if(bp->bp_period_file == NULL) {
-      result = BPRC_BUSY;
-      goto out;
-    }
-
-    bp->bp_polarity_file = file_open_and_claim(bp->bp_polarity_file_path, "r+");
-    if(bp->bp_polarity_file == NULL) {
-      result = BPRC_BUSY;
-      goto out;
-    }
-
-    // Load the cached values.
-    result = file_read_uint32(bp->bp_duty_file, &(bp->bp_duty_cycle));
-    if(result != BPRC_OK) {
-      goto out;
-    }
-
-    result = file_read_uint32(bp->bp_period_file, &(bp->bp_period));
-    if(result != BPRC_OK) {
-      goto out;
-    }
-
-    result = file_read_int8(bp->bp_polarity_file, &(bp->bp_polarity));
-    if(result != BPRC_OK) {
-      goto out;
-    }
-
-out:
-    if(result != BPRC_OK) {
-      // On failure, unclaim will force a cleanup.
-      bbb_pwm_unclaim(bp);
-    } else {
-      bp->bp_state = BPS_CLAIMED;
-    }
+  result = bbb_pwm_get_period(bp, &period);
+  if(result != BPRC_OK)	{
     return result;
   }
 
-  /**
-   * @brief Unclaims a pwm.
-   *
-   * @param bp The pwm to unclaim.
-   *
-   * @return A status code.
-   */
-  int
-  bbb_pwm_unclaim(struct bbb_pwm_t * bp) {
-    assert(bp != NULL);
-
-    bp->bp_state = BPS_UNCLAIMED;
-    // Close the duty file.
-    if(bp->bp_duty_file != NULL) {
-      file_close_and_unclaim(bp->bp_duty_file);
-      bp->bp_duty_file = NULL;
-    }
-    // Close the period file.
-    if(bp->bp_period_file != NULL) {
-      file_close_and_unclaim(bp->bp_period_file);
-      bp->bp_period_file = NULL;
-    }
-    // Close the polarity file.
-    if(bp->bp_polarity_file != NULL) {
-      file_close_and_unclaim(bp->bp_polarity_file);
-      bp->bp_polarity_file = NULL;
-    }
-    return BPRC_OK;
+  // duty cycle must be less than or equal to period.
+  if(duty_cycle > period) {
+    return BPRC_RANGE;
   }
 
-  /**
-   * @brief Check to see if the pwm is unclaimed.
-   *
-   * @param bp The pwm to check.
-   *
-   * @return True/False is the pwm unclaimed.
-   */
-  int
-  bbb_pwm_is_unclaimed(struct bbb_pwm_t * bp) {
-    assert(bp != NULL);
-    return bp->bp_state == BPS_UNCLAIMED;
-  }
-
-  /**
-   * @brief Check to see if we have claimership of the pwm.
-   *
-   * @param bp The pwm to check.
-   *
-   * @return True/False if we have claimership.
-   */
-  int
-  bbb_pwm_is_claimed(struct bbb_pwm_t * bp) {
-    assert(bp != NULL);
-    return bp->bp_state == BPS_CLAIMED;
-  }
-
-  /**
-   * @brief Set the duty of the pwm.
-   * NOTE: The pwm must be claimed to set anything on it.
-   *
-   * @param bp The pwm to set.
-   * @param duty The duty to set the pwm to.
-   *
-   * @return A status code.
-   */
-  int
-  bbb_pwm_set_duty_cycle(struct bbb_pwm_t * bp, uint32_t duty_cycle) {
-    uint32_t period;
-    int result;
-    assert(bp != NULL);
-
-    if(!bbb_pwm_is_claimed(bp)) {
-      return BPRC_NOT_CLAIMED;
-    }
-
-    result = bbb_pwm_get_period(bp, &period);
-    if(result != BPRC_OK)	{
-      return result;
-    }
-
-    // duty cycle must be less than or equal to period.
-    if(duty_cycle > period) {
-      return BPRC_RANGE;
-    }
-
-    // Write the data.
-    result = file_write_uint32(bp->bp_duty_file, duty_cycle);
-    if(result != BPRC_OK) {
-      return result;
-    }
-
-    bp->bp_duty_cycle = duty_cycle;
-    return BPRC_OK;
-  }
-
-  /**
-   * @brief Set the period of the pwm.
-   * NOTE: The pwm must be claimed to set anything on it.
-   *
-   * @param bp The pwm to set.
-   * @param period The period to set it to.
-   *
-   * @return A status code.
-   */
-  int
-  bbb_pwm_set_period(struct bbb_pwm_t * bp, uint32_t period) {
-    int result;
-    assert(bp != NULL);
-
-    if(!bbb_pwm_is_claimed(bp)) {
-      return BPRC_NOT_CLAIMED;
-    }
-
-    result = file_write_uint32(bp->bp_period_file, period);
-    if(result != BPRC_OK) {
-      return result;
-    }
-
-    bp->bp_period = period;
-    return BPRC_OK;
-  }
-
-  /**
-   * @brief Sets the polarity of the pwm.
-   * NOTE: The pwm must be claimed to set anything on it.
-   *
-   * @param bp The pwm to set.
-   * @param polarity The polarity to set the pwm to.
-   *
-   * @return A status code.
-   */
-  int
-  bbb_pwm_set_polarity(struct bbb_pwm_t * bp, int8_t polarity) {
-    int result;
-    assert(bp != NULL);
-
-    if(!bbb_pwm_is_claimed(bp)) {
-      return BPRC_NOT_CLAIMED;
-    }
-
-    // TODO: Do I need to disable the pwm first?
-    // https://www.kernel.org/doc/Documentation/pwm.txt
-
-    if(polarity != -1 && polarity != 1) {
-      // TODO Verify these limits.
-      return BPRC_RANGE;
-    }
-
-    result = file_write_uint32(bp->bp_polarity_file, polarity);
-    if(result != BPRC_OK) {
-      return result;
-    }
-
-    bp->bp_polarity = polarity;
-    return BPRC_OK;
-  }
-
-  /**
-   * @brief Set the duty percentage or throttle of a pwm.
-   *
-   * @param bp The pwm to set.
-   * @param percent The percentage to set the duty to.
-   *
-   * @return A status code.
-   */
-  int
-  bbb_pwm_set_duty_percent(struct bbb_pwm_t * bp, float percent) {
-    uint32_t duty_cycle, period;
-    int result;
-    assert(bp != NULL);
-
-    if(!bbb_pwm_is_claimed(bp)) {
-      return BPRC_NOT_CLAIMED;
-    }
-
-    if(percent < 0.0f || percent > 100.0f) {
-      return BPRC_RANGE;
-    }
-
-    result = bbb_pwm_get_period(bp, &period);
-    if(result != BPRC_OK) {
-      return result;
-    }
-    // We need to invert the percentage.
-    // 0 Should be FULL STOP 100 should be FULL SPEED
-    duty_cycle = (uint32_t)(((float) period) * (percent / 100.0f));
-
-    return bbb_pwm_set_duty_cycle(bp, duty_cycle);
-  }
-
-  /**
-   * @brief Set the period frequency of a pwm.
-   *
-   * @param bp The pwm to set.
-   * @param hertz The frequency in herts to set.
-   *
-   * @return A status code.
-   */
-  int
-  bbb_pwm_set_frequency(struct bbb_pwm_t * bp, uint32_t hertz) {
-    int result;
-    uint32_t period;
-    uint32_t duty;
-
-    assert(bp != NULL);
-
-    if(!bbb_pwm_is_claimed(bp)) {
-      return BPRC_NOT_CLAIMED;
-    }
-
-    // period can't be less than 1
-    // rule out divide by zero.
-    if(hertz > 1e9 || hertz <= 0) {
-      return BPRC_RANGE;
-    }
-
-    // Convert hertz to period in nanoseconds.
-    period = 1e9 / hertz;
-
-    result = bbb_pwm_get_duty_cycle(bp, &duty);
-    if(result != BPRC_OK) {
-      return result;
-    }
-
-    // Duty can't exceede period.
-    // Duty should probably be throttled to zero first!
-    // Weird shit might happen :/
-    if(period < duty) {
-      return BPRC_RANGE;
-    }
-
-    // Set the new period.
-    return bbb_pwm_set_period(bp, period);
-  }
-
-  /**
-   * @brief Gets the duty cycle of a pwm.
-   * If the pwm isn't claimed, we attempt to open the right file for reading.
-   * Note that this may fail if someone else owns it.
-   *
-   * @param bp The pwm to read from.
-   * @param[out] out_duty The duty cycle read.
-   *
-   * @return A status code.
-   */
-  int
-  bbb_pwm_get_duty_cycle(struct bbb_pwm_t * bp, uint32_t * out_duty) {
-    FILE *duty_file = NULL;
-    int result = BPRC_OK;
-
-    assert(bp != NULL);
-    assert(out_duty != NULL);
-
-    if(bbb_pwm_is_claimed(bp)) {
-      // Value was cached.
-      *out_duty = bp->bp_duty_cycle;
-      goto out;
-    }
-
-    duty_file = fopen(bp->bp_duty_file_path, "r");
-    if(duty_file == NULL) {
-      result = BPRC_BUSY;
-      goto out;
-    }
-
-    result = file_read_uint32(duty_file, out_duty);
-out:
-    if(duty_file != NULL) {
-      fclose(duty_file);
-    }
+  // Write the data.
+  result = file_write_uint32(bp->bp_duty_file, duty_cycle);
+  if(result != BPRC_OK) {
     return result;
   }
 
-  /**
-   * @brief Gets the period of a pwm.
-   * If the pwm isn't claimed, we attempt to open the right file for reading.
-   * Note that this may fail if someone else owns it.
-   *
-   * @param bp The pwm to read from.
-   * @param[out] out_period The period read.
-   *
-   * @return A status code.
-   */
-  int
-  bbb_pwm_get_period(struct bbb_pwm_t * bp, uint32_t * out_period) {
-    FILE *period_file = NULL;
-    int result = BPRC_OK;
+  bp->bp_duty_cycle = duty_cycle;
+  return BPRC_OK;
+}
 
-    assert(bp != NULL);
-    assert(out_period != NULL);
+/**
+ * @brief Set the period of the pwm.
+ * NOTE: The pwm must be claimed to set anything on it.
+ *
+ * @param bp The pwm to set.
+ * @param period The period to set it to.
+ *
+ * @return A status code.
+ */
+int
+bbb_pwm_set_period(struct bbb_pwm_t *bp, uint32_t period)
+{
+  int result;
+  assert(bp != NULL);
 
-    if(bbb_pwm_is_claimed(bp)) {
-      *out_period = bp->bp_period;
-      goto out;
-    }
+  if(!bbb_pwm_is_claimed(bp)) {
+    return BPRC_NOT_CLAIMED;
+  }
 
-    period_file = fopen(bp->bp_period_file_path, "r");
-    if(period_file == NULL) {
-      result = BPRC_BUSY;
-      goto out;
-    }
-
-    result = file_read_uint32(period_file, out_period);
-out:
-    if(period_file != NULL) {
-      fclose(period_file);
-    }
+  result = file_write_uint32(bp->bp_period_file, period);
+  if(result != BPRC_OK) {
     return result;
   }
 
-  /**
-   * @brief Gets the polarity of a pwm.
-   * If the pwm isn't claimed, we attempt to open the right file for reading.
-   * Note that this may fail if someone else owns it.
-   *
-   * @param bp The pwm to read from.
-   * @param[out] out_polarity The polarity read.
-   *
-   * @return A status code.
-   */
-  int
-  bbb_pwm_get_polarity(struct bbb_pwm_t * bp, int8_t * out_polarity) {
-    FILE *polarity_file = NULL;
-    int result = BPRC_OK;
+  bp->bp_period = period;
+  return BPRC_OK;
+}
 
-    assert(bp != NULL);
-    assert(out_polarity != NULL);
+/**
+ * @brief Sets the polarity of the pwm.
+ * NOTE: The pwm must be claimed to set anything on it.
+ *
+ * @param bp The pwm to set.
+ * @param polarity The polarity to set the pwm to.
+ *
+ * @return A status code.
+ */
+int
+bbb_pwm_set_polarity(struct bbb_pwm_t *bp, int8_t polarity)
+{
+  int result;
+  assert(bp != NULL);
 
-    if(bbb_pwm_is_claimed(bp)) {
-      *out_polarity = bp->bp_polarity;
-      goto out;
-    }
+  if(!bbb_pwm_is_claimed(bp)) {
+    return BPRC_NOT_CLAIMED;
+  }
 
-    polarity_file = fopen(bp->bp_polarity_file_path, "r");
-    if(polarity_file == NULL) {
-      result = BPRC_BUSY;
-      goto out;
-    }
+  // TODO: Do I need to disable the pwm first?
+  // https://www.kernel.org/doc/Documentation/pwm.txt
 
-    result = file_read_int8(polarity_file, out_polarity);
-out:
-    if(polarity_file != NULL) {
-      fclose(polarity_file);
-    }
+  if(polarity != -1 && polarity != 1) {
+    // TODO Verify these limits.
+    return BPRC_RANGE;
+  }
+
+  result = file_write_uint32(bp->bp_polarity_file, polarity);
+  if(result != BPRC_OK) {
     return result;
   }
 
-  /**
-   * @brief Get the current duty percent, or throttle from the pwm.
-   *
-   * @param bp The pwm to read from.
-   * @param[out] out_percent The percentage calcualted from
-   * the period and duty cycle.
-   *
-   * @return A status code.
-   */
-  int
-  bbb_pwm_get_duty_percent(struct bbb_pwm_t * bp, float * out_percent) {
-    uint32_t duty, period;
-    int result;
+  bp->bp_polarity = polarity;
+  return BPRC_OK;
+}
 
-    result = bbb_pwm_get_period(bp, &period);
-    if(result != BPRC_OK) {
-      return result;
-    }
+/**
+ * @brief Set the duty percentage or throttle of a pwm.
+ *
+ * @param bp The pwm to set.
+ * @param percent The percentage to set the duty to.
+ *
+ * @return A status code.
+ */
+int
+bbb_pwm_set_duty_percent(struct bbb_pwm_t *bp, float percent)
+{
+  uint32_t duty_cycle, period;
+  int result;
+  assert(bp != NULL);
 
-    result = bbb_pwm_get_duty_cycle(bp, &duty);
-    if(result != BPRC_OK) {
-      return result;
-    }
-
-    *out_percent = ((float) duty / (float) period) * 100.0f;
-    return BPRC_OK;
+  if(!bbb_pwm_is_claimed(bp)) {
+    return BPRC_NOT_CLAIMED;
   }
 
-  /**
-   * @brief Get the current frequncy of the period in hertz.
-   *
-   * @param bp The pwm to read from.
-   * @param[out] out_hertz The hertz calculated from the period.
-   *
-   * @return A status code.
-   */
-  int
-  bbb_pwm_get_frequency(struct bbb_pwm_t * bp, uint32_t * out_hertz) {
-    uint32_t period;
-    int result;
-
-    result = bbb_pwm_get_period(bp, &period);
-    if(result != BPRC_OK) {
-      return result;
-    }
-
-    // Convert nanoseconds to hertz.
-    *out_hertz = 1e9 / period;
-    return BPRC_OK;
+  if(percent < 0.0f || percent > 100.0f) {
+    return BPRC_RANGE;
   }
 
-  /**
-   * @brief Open a file and then set a lock on it.
-   * Fail if we can't get a lock.
-   *
-   * @param path The path to the file we are getting and locking.
-   *
-   * @return A FILE* if we could lock and open the file, else NULL.
-   */
-  FILE *
-  file_open_and_claim(const char * path, const char * mode) {
-    struct flock lock;
-    FILE *file;
-    int fd;
+  result = bbb_pwm_get_period(bp, &period);
+  if(result != BPRC_OK) {
+    return result;
+  }
+  // We need to invert the percentage.
+  // 0 Should be FULL STOP 100 should be FULL SPEED
+  duty_cycle = (uint32_t)(((float) period) * (percent / 100.0f));
 
-    file = fopen(path, mode);
-    if(file == NULL) {
-      // Failed to open the file!
-      return NULL;
-    }
+  return bbb_pwm_set_duty_cycle(bp, duty_cycle);
+}
 
-    fd = fileno(file);
-    if(fd < 0) {
-      // Failed to get the file descriptor.
-      fclose(file);
-      return NULL;
-    }
+/**
+ * @brief Set the period frequency of a pwm.
+ *
+ * @param bp The pwm to set.
+ * @param hertz The frequency in herts to set.
+ *
+ * @return A status code.
+ */
+int
+bbb_pwm_set_frequency(struct bbb_pwm_t *bp, uint32_t hertz)
+{
+  int result;
+  uint32_t period;
+  uint32_t duty;
 
-    // Lock the whole file.
-    lock.l_whence = SEEK_SET;
-    lock.l_start = 0;
-    lock.l_len = 0;
+  assert(bp != NULL);
 
-    // Figure out the lock type.
-    if(file_can_write(file)) {
-      lock.l_type = F_WRLCK;
-    } else {
-      lock.l_type = F_RDLCK;
-    }
-
-    if(fcntl(fd, F_SETLK, &lock) < 0) {
-      // Failed to lock the file.
-      fclose(file);
-      return NULL;
-    }
-
-    return file;
+  if(!bbb_pwm_is_claimed(bp)) {
+    return BPRC_NOT_CLAIMED;
   }
 
-  /**
-   * @brief Close the file and then unlock it.
-   *
-   * @param file The file to close and then unlock.
-   */
-  void
-  file_close_and_unclaim(FILE * file) {
-    int fd;
-    struct flock unlock;
+  // period can't be less than 1
+  // rule out divide by zero.
+  if(hertz > 1e9 || hertz <= 0) {
+    return BPRC_RANGE;
+  }
 
-    if(file == NULL) {
-      return;
-    }
+  // Convert hertz to period in nanoseconds.
+  period = 1e9 / hertz;
 
-    fd = fileno(file);
-    if(fd < 0) {
-      return;
-    }
+  result = bbb_pwm_get_duty_cycle(bp, &duty);
+  if(result != BPRC_OK) {
+    return result;
+  }
 
-    // Unlock the whole file.
-    unlock.l_whence = SEEK_SET;
-    unlock.l_start = 0;
-    unlock.l_len = 0;
+  // Duty can't exceede period.
+  // Duty should probably be throttled to zero first!
+  // Weird shit might happen :/
+  if(period < duty) {
+    return BPRC_RANGE;
+  }
 
-    unlock.l_type = F_UNLCK;
+  // Set the new period.
+  return bbb_pwm_set_period(bp, period);
+}
 
-    // Unlock the file (If we had a claim on it.)
-    fcntl(fd, F_SETLK, &unlock);
+const char* 
+bbb_pwm_get_name(struct bbb_pwm_t* bp)
+{
+	assert(bp != NULL);
+	return bp->bp_name;
+}
 
-    // Close the file.
+const char* 
+bbb_pwm_get_path(struct bbb_pwm_t* bp)
+{
+	assert(bp != NULL);
+	return bp->bp_name;
+}
+
+/**
+ * @brief Gets the duty cycle of a pwm.
+ * If the pwm isn't claimed, we attempt to open the right file for reading.
+ * Note that this may fail if someone else owns it.
+ *
+ * @param bp The pwm to read from.
+ * @param[out] out_duty The duty cycle read.
+ *
+ * @return A status code.
+ */
+int
+bbb_pwm_get_duty_cycle(struct bbb_pwm_t *bp, uint32_t *out_duty)
+{
+  FILE *duty_file = NULL;
+  int result = BPRC_OK;
+
+  assert(bp != NULL);
+  assert(out_duty != NULL);
+
+  if(bbb_pwm_is_claimed(bp)) {
+    // Value was cached.
+    *out_duty = bp->bp_duty_cycle;
+    goto out;
+  }
+
+  duty_file = fopen(bp->bp_duty_file_path, "r");
+  if(duty_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
+
+  result = file_read_uint32(duty_file, out_duty);
+out:
+  if(duty_file != NULL) {
+    fclose(duty_file);
+  }
+  return result;
+}
+
+/**
+ * @brief Gets the period of a pwm.
+ * If the pwm isn't claimed, we attempt to open the right file for reading.
+ * Note that this may fail if someone else owns it.
+ *
+ * @param bp The pwm to read from.
+ * @param[out] out_period The period read.
+ *
+ * @return A status code.
+ */
+int
+bbb_pwm_get_period(struct bbb_pwm_t *bp, uint32_t *out_period)
+{
+  FILE *period_file = NULL;
+  int result = BPRC_OK;
+
+  assert(bp != NULL);
+  assert(out_period != NULL);
+
+  if(bbb_pwm_is_claimed(bp)) {
+    *out_period = bp->bp_period;
+    goto out;
+  }
+
+  period_file = fopen(bp->bp_period_file_path, "r");
+  if(period_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
+
+  result = file_read_uint32(period_file, out_period);
+out:
+  if(period_file != NULL) {
+    fclose(period_file);
+  }
+  return result;
+}
+
+/**
+ * @brief Gets the polarity of a pwm.
+ * If the pwm isn't claimed, we attempt to open the right file for reading.
+ * Note that this may fail if someone else owns it.
+ *
+ * @param bp The pwm to read from.
+ * @param[out] out_polarity The polarity read.
+ *
+ * @return A status code.
+ */
+int
+bbb_pwm_get_polarity(struct bbb_pwm_t *bp, int8_t *out_polarity)
+{
+  FILE *polarity_file = NULL;
+  int result = BPRC_OK;
+
+  assert(bp != NULL);
+  assert(out_polarity != NULL);
+
+  if(bbb_pwm_is_claimed(bp)) {
+    *out_polarity = bp->bp_polarity;
+    goto out;
+  }
+
+  polarity_file = fopen(bp->bp_polarity_file_path, "r");
+  if(polarity_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
+
+  result = file_read_int8(polarity_file, out_polarity);
+out:
+  if(polarity_file != NULL) {
+    fclose(polarity_file);
+  }
+  return result;
+}
+
+/**
+ * @brief Get the current duty percent, or throttle from the pwm.
+ *
+ * @param bp The pwm to read from.
+ * @param[out] out_percent The percentage calcualted from
+ * the period and duty cycle.
+ *
+ * @return A status code.
+ */
+int
+bbb_pwm_get_duty_percent(struct bbb_pwm_t *bp, float *out_percent)
+{
+  uint32_t duty, period;
+  int result;
+
+  result = bbb_pwm_get_period(bp, &period);
+  if(result != BPRC_OK) {
+    return result;
+  }
+
+  result = bbb_pwm_get_duty_cycle(bp, &duty);
+  if(result != BPRC_OK) {
+    return result;
+  }
+
+  *out_percent = ((float) duty / (float) period) * 100.0f;
+  return BPRC_OK;
+}
+
+/**
+ * @brief Get the current frequncy of the period in hertz.
+ *
+ * @param bp The pwm to read from.
+ * @param[out] out_hertz The hertz calculated from the period.
+ *
+ * @return A status code.
+ */
+int
+bbb_pwm_get_frequency(struct bbb_pwm_t *bp, uint32_t *out_hertz)
+{
+  uint32_t period;
+  int result;
+
+  result = bbb_pwm_get_period(bp, &period);
+  if(result != BPRC_OK) {
+    return result;
+  }
+
+  // Convert nanoseconds to hertz.
+  *out_hertz = 1e9 / period;
+  return BPRC_OK;
+}
+
+/**
+ * @brief Open a file and then set a lock on it.
+ * Fail if we can't get a lock.
+ *
+ * @param path The path to the file we are getting and locking.
+ *
+ * @return A FILE* if we could lock and open the file, else NULL.
+ */
+FILE *
+file_open_and_claim(const char *path, const char *mode)
+{
+  struct flock lock;
+  FILE *file;
+  int fd;
+
+  file = fopen(path, mode);
+  if(file == NULL) {
+    // Failed to open the file!
+    return NULL;
+  }
+
+  fd = fileno(file);
+  if(fd < 0) {
+    // Failed to get the file descriptor.
     fclose(file);
+    return NULL;
   }
 
-  /**
-   * @brief Check to see if we can write to a file.
-   *
-   * @param file The FILE* to check.
-   *
-   * @return True/False can we write to the file.
-   */
-  int
-  file_can_write(FILE * file) {
-    int fd, mode;
-    if(file == NULL) {
-      return 0;
-    }
+  // Lock the whole file.
+  lock.l_whence = SEEK_SET;
+  lock.l_start = 0;
+  lock.l_len = 0;
 
-    fd = fileno(file);
-    if(fd < 0) {
-      return 0;
-    }
-
-    mode = fcntl(fd, F_GETFL);
-    return ((mode & O_WRONLY) == O_WRONLY) || ((mode & O_RDWR) == O_RDWR);
+  // Figure out the lock type.
+  if(file_can_write(file)) {
+    lock.l_type = F_WRLCK;
+  } else {
+    lock.l_type = F_RDLCK;
   }
 
-  /**
-   * @brief Check to see if we can read from a file.
-   *
-   * @param file THe FILE* to check.
-   *
-   * @return True/False can we read from a file.
-   */
-  int
-  file_can_read(FILE * file) {
-    int fd, mode;
-    if(file == NULL) {
-      return 0;
-    }
-
-    fd = fileno(file);
-    if(fd < 0) {
-      return 0;
-    }
-
-    mode = fcntl(fd, F_GETFL);
-    return ((mode & O_WRONLY) != O_WRONLY) || ((mode & O_RDWR) == O_RDWR);
+  if(fcntl(fd, F_SETLK, &lock) < 0) {
+    // Failed to lock the file.
+    fclose(file);
+    return NULL;
   }
 
-  /**
-   * @brief Reads an uint32 from a file.
-   *
-   * @param file The file to read from.
-   * @param[out] out_data The uint32 if successful.
-   *
-   * @return A status code.
-   */
-  int
-  file_read_uint32(FILE * file, uint32_t * out_data) {
-    int result;
-    if(file == NULL || out_data == NULL) {
-      return BPRC_NULL_PTR;
-    }
-    if(!file_can_read(file)) {
-      return BPRC_BAD_FILE;
-    }
-    // Set to 0
-    result = fseek(file, 0, SEEK_SET);
-    if(result != 0) {
-      return BPRC_BAD_FILE;
-    }
-    // Read the data.
-    result = fscanf(file, "%"PRIu32"", out_data);
-    if(result < 0) {
-      return BPRC_NO_DATA;
-    }
-    return BPRC_OK;
+  return file;
+}
+
+/**
+ * @brief Close the file and then unlock it.
+ *
+ * @param file The file to close and then unlock.
+ */
+void
+file_close_and_unclaim(FILE *file)
+{
+  int fd;
+  struct flock unlock;
+
+  if(file == NULL) {
+    return;
   }
 
-  /**
-   * @brief Reads an int8 from a file.
-   *
-   * @param file The file to read from.
-   * @param[out] out_data The int8 if successful.
-   *
-   * @return A status code.
-   */
-  int
-  file_read_int8(FILE * file, int8_t * out_data) {
-    int result;
-    if(file == NULL || out_data == NULL) {
-      return BPRC_NULL_PTR;
-    }
-    if(!file_can_read(file)) {
-      return BPRC_BAD_FILE;
-    }
-    // Set to 0
-    result = fseek(file, 0, SEEK_SET);
-    if(result != 0) {
-      return BPRC_BAD_FILE;
-    }
-    // Read the data.
-    result = fscanf(file, "%"SCNd8"", out_data);
-    if(result < 0) {
-      return BPRC_NO_DATA;
-    }
-    return BPRC_OK;
+  fd = fileno(file);
+  if(fd < 0) {
+    return;
   }
 
-  /**
-   * @brief Write an uint32 to a file.
-   *
-   * @param file The file to write to.
-   * @param data The uint32 to write.
-   *
-   * @return A status code.
-   */
-  int
-  file_write_uint32(FILE * file, uint32_t data) {
-    int result;
-    if(file == NULL) {
-      return BPRC_BAD_FILE;
-    }
-    if(!file_can_write(file)) {
-      return BPRC_BAD_FILE;
-    }
-    // Truncate the file.
-    if(freopen(NULL, "w+", file) == NULL) {
-      return BPRC_BAD_FILE;
-    }
-    // Write the data
-    result = fprintf(file, "%"PRIu32"", data);
-    if(result <= 0) {
-      return BPRC_BAD_WRITE;
-    }
-    return BPRC_OK;
+  // Unlock the whole file.
+  unlock.l_whence = SEEK_SET;
+  unlock.l_start = 0;
+  unlock.l_len = 0;
+
+  unlock.l_type = F_UNLCK;
+
+  // Unlock the file (If we had a claim on it.)
+  fcntl(fd, F_SETLK, &unlock);
+
+  // Close the file.
+  fclose(file);
+}
+
+/**
+ * @brief Check to see if we can write to a file.
+ *
+ * @param file The FILE* to check.
+ *
+ * @return True/False can we write to the file.
+ */
+int
+file_can_write(FILE *file)
+{
+  int fd, mode;
+  if(file == NULL) {
+    return 0;
   }
 
-  /**
-   * @brief Write an int8 to a file.
-   *
-   * @param file The file to write to.
-   * @param data THe int8 to write.
-   *
-   * @return A status code.
-   */
-  int
-  file_write_int8(FILE * file, int8_t data) {
-    int result;
-    if(file == NULL) {
-      return BPRC_BAD_FILE;
-    }
-    if(!file_can_write(file)) {
-      return BPRC_BAD_FILE;
-    }
-    // Truncate the file.
-    if(freopen(NULL, "w+", file) == NULL) {
-      return BPRC_BAD_FILE;
-    }
-    // Write the data
-    result = fprintf(file, "%"PRId8"", data);
-    if(result <= 0) {
-      return BPRC_BAD_WRITE;
-    }
-    return BPRC_OK;
+  fd = fileno(file);
+  if(fd < 0) {
+    return 0;
   }
+
+  mode = fcntl(fd, F_GETFL);
+  return ((mode & O_WRONLY) == O_WRONLY) || ((mode & O_RDWR) == O_RDWR);
+}
+
+/**
+ * @brief Check to see if we can read from a file.
+ *
+ * @param file THe FILE* to check.
+ *
+ * @return True/False can we read from a file.
+ */
+int
+file_can_read(FILE *file)
+{
+  int fd, mode;
+  if(file == NULL) {
+    return 0;
+  }
+
+  fd = fileno(file);
+  if(fd < 0) {
+    return 0;
+  }
+
+  mode = fcntl(fd, F_GETFL);
+  return ((mode & O_WRONLY) != O_WRONLY) || ((mode & O_RDWR) == O_RDWR);
+}
+
+/**
+ * @brief Reads an uint32 from a file.
+ *
+ * @param file The file to read from.
+ * @param[out] out_data The uint32 if successful.
+ *
+ * @return A status code.
+ */
+int
+file_read_uint32(FILE *file, uint32_t *out_data)
+{
+  int result;
+  if(file == NULL || out_data == NULL) {
+    return BPRC_NULL_PTR;
+  }
+  if(!file_can_read(file)) {
+    return BPRC_BAD_FILE;
+  }
+  // Set to 0
+  result = fseek(file, 0, SEEK_SET);
+  if(result != 0) {
+    return BPRC_BAD_FILE;
+  }
+  // Read the data.
+  result = fscanf(file, "%"PRIu32"", out_data);
+  if(result < 0) {
+    return BPRC_NO_DATA;
+  }
+  return BPRC_OK;
+}
+
+/**
+ * @brief Reads an int8 from a file.
+ *
+ * @param file The file to read from.
+ * @param[out] out_data The int8 if successful.
+ *
+ * @return A status code.
+ */
+int
+file_read_int8(FILE *file, int8_t *out_data)
+{
+  int result;
+  if(file == NULL || out_data == NULL) {
+    return BPRC_NULL_PTR;
+  }
+  if(!file_can_read(file)) {
+    return BPRC_BAD_FILE;
+  }
+  // Set to 0
+  result = fseek(file, 0, SEEK_SET);
+  if(result != 0) {
+    return BPRC_BAD_FILE;
+  }
+  // Read the data.
+  result = fscanf(file, "%"SCNd8"", out_data);
+  if(result < 0) {
+    return BPRC_NO_DATA;
+  }
+  return BPRC_OK;
+}
+
+/**
+ * @brief Write an uint32 to a file.
+ *
+ * @param file The file to write to.
+ * @param data The uint32 to write.
+ *
+ * @return A status code.
+ */
+int
+file_write_uint32(FILE *file, uint32_t data)
+{
+  int result;
+  if(file == NULL) {
+    return BPRC_BAD_FILE;
+  }
+  if(!file_can_write(file)) {
+    return BPRC_BAD_FILE;
+  }
+  // Truncate the file.
+  if(freopen(NULL, "w+", file) == NULL) {
+    return BPRC_BAD_FILE;
+  }
+  // Write the data
+  result = fprintf(file, "%"PRIu32"", data);
+  if(result <= 0) {
+    return BPRC_BAD_WRITE;
+  }
+  return BPRC_OK;
+}
+
+/**
+ * @brief Write an int8 to a file.
+ *
+ * @param file The file to write to.
+ * @param data THe int8 to write.
+ *
+ * @return A status code.
+ */
+int
+file_write_int8(FILE *file, int8_t data)
+{
+  int result;
+  if(file == NULL) {
+    return BPRC_BAD_FILE;
+  }
+  if(!file_can_write(file)) {
+    return BPRC_BAD_FILE;
+  }
+  // Truncate the file.
+  if(freopen(NULL, "w+", file) == NULL) {
+    return BPRC_BAD_FILE;
+  }
+  // Write the data
+  result = fprintf(file, "%"PRId8"", data);
+  if(result <= 0) {
+    return BPRC_BAD_WRITE;
+  }
+  return BPRC_OK;
+}
