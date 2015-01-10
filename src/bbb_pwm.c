@@ -300,12 +300,12 @@ bbb_pwm_controller_remove_pwm(struct bbb_pwm_controller_t *bpc,
 }
 
 /**
- * @brief
+ * @brief Does a controller have a specific pwm.
  *
- * @param bpc
- * @param name
+ * @param bpc The controller to query.
+ * @param name The name of the pwm to look for.
  *
- * @return
+ * @return True/False was a pwm by that name found.
  */
 bool
 bbb_pwm_controller_has_pwm(struct bbb_pwm_controller_t *bpc,
@@ -315,56 +315,31 @@ bbb_pwm_controller_has_pwm(struct bbb_pwm_controller_t *bpc,
 }
 
 /**
- * @brief
+ * @brief Get a specific pwm from the list of pwms.
  *
- * @param bpc
- * @param name
- *
- * @return
+ * @param bpc The pwm_controller to get the pwm from.
+ * @param name The name of the pwm to get.
+ * 
+ * @return A pwm if found, NULL if not found.
  */
 struct bbb_pwm_t *
 bbb_pwm_controller_get_pwm(struct bbb_pwm_controller_t *bpc,
                            const char *name)
 {
-  struct bbb_pwm_t *cur;
-  int result;
-
   assert(bpc != NULL);
   assert(name != NULL);
 
-  cur = bpc->bpc_head_pwm;
-  if(cur == NULL) {
-    // Empty list.
-    return NULL;
-  }
-
-  // Do our compare
-  result = strcmp(cur->bp_name, name);
-
-  if(result == 0) {
-    return cur;
-  }
-
-  if(result > 0) {
-    // Item can't possibly be in our list.
-    return NULL;
-  }
-
-  while(cur->bp_next != NULL) {
-    // Do our compare.
-    result = strcmp(cur->bp_next->bp_name, name);
+	foreach_pwm(bp, bpc) {
+		int result = strcmp(bp->bp_name, name);
     if(result == 0) {
-      return cur;
+      return bp;
     }
 
     if(result > 0) {
       // Item can't possibly be in our list.
       return NULL;
     }
-    // Move on.
-    cur = cur->bp_next;
-    assert(cur != NULL);
-  }
+	}
 
   return NULL;
 }
@@ -377,8 +352,7 @@ bbb_pwm_controller_get_pwm(struct bbb_pwm_controller_t *bpc,
  * @return The first pwm in the list or NULL if there are none.
  */
 struct bbb_pwm_t *
-bbb_pwm_controller_get_head_pwm(
-  struct bbb_pwm_controller_t *bpc)
+bbb_pwm_controller_get_head_pwm(struct bbb_pwm_controller_t *bpc)
 {
 	assert(bpc != NULL);
 	return bpc->bpc_head_pwm;
@@ -388,16 +362,18 @@ bbb_pwm_controller_get_head_pwm(
  * @brief Creates a new bbb_pwm_t.
  *
  * @param name The name of the new pwm.
+ * @param path
  *
- * @return A new pwm or NULL on failure.
+ * @return A new pwm or NULL on failure. 
  */
 struct bbb_pwm_t *
-bbb_pwm_new(const char *name, const char *root_path)
+bbb_pwm_new(const char *name, const char *path)
 {
   int result;
   struct bbb_pwm_t *bp;
-  if(name == NULL || root_path == NULL) {
-    // Fail for bad setup.
+
+  if(name == NULL || path == NULL) {
+    // Fail for bad input.
     return NULL;
   }
 
@@ -406,28 +382,45 @@ bbb_pwm_new(const char *name, const char *root_path)
 
   // Initially we are unclaimed.
   bp->bp_state = BPS_UNCLAIMED;
+
   // Copy the name
   bp->bp_name = (char *) strdup(name);
   if(bp->bp_name == NULL) {
     bbb_pwm_delete(&bp);
     goto out;
   }
+
+	// Copy the path
+  bp->bp_path = (char *) strdup(path);
+  if(bp->bp_path == NULL) {
+    bbb_pwm_delete(&bp);
+    goto out;
+  }
+
   // Setup our paths.
-  result = asprintf(&(bp->bp_duty_file_path),
-                    "%s/%s", root_path, "duty");
+	result = asprintf(&(bp->bp_running_state_file_path),
+                    "%s/%s", path, "run");
   if(result < 0) {
     bbb_pwm_delete(&bp);
     goto out;
   }
+  
+	result = asprintf(&(bp->bp_duty_file_path),
+                    "%s/%s", path, "duty");
+  if(result < 0) {
+    bbb_pwm_delete(&bp);
+    goto out;
+  }
+
   result = asprintf(&(bp->bp_period_file_path),
-                    "%s/%s", root_path, "period");
+                    "%s/%s", path, "period");
   if(result < 0) {
     bbb_pwm_delete(&bp);
     goto out;
   }
 
   result = asprintf(&(bp->bp_polarity_file_path),
-                    "%s/%s", root_path, "polarity");
+                    "%s/%s", path, "polarity");
   if(result < 0) {
     bbb_pwm_delete(&bp);
     goto out;
@@ -498,11 +491,18 @@ bbb_pwm_claim(struct bbb_pwm_t *bp)
     return BPRC_OK;
   }
 
+  assert(bp->bp_running_state_file_path != NULL);
   assert(bp->bp_duty_file_path != NULL);
   assert(bp->bp_period_file_path != NULL);
   assert(bp->bp_polarity_file_path != NULL);
 
   // Open the necessary files.
+  bp->bp_running_state_file = file_open_and_claim(bp->bp_running_state_file_path, "r+");
+  if(bp->bp_running_state_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
+
   bp->bp_duty_file = file_open_and_claim(bp->bp_duty_file_path, "r+");
   if(bp->bp_duty_file == NULL) {
     result = BPRC_BUSY;
@@ -522,6 +522,11 @@ bbb_pwm_claim(struct bbb_pwm_t *bp)
   }
 
   // Load the cached values.
+	result = file_read_int8(bp->bp_running_state_file, &(bp->bp_running_state));
+  if(result != BPRC_OK) {
+    goto out;
+  }
+
   result = file_read_uint32(bp->bp_duty_file, &(bp->bp_duty_cycle));
   if(result != BPRC_OK) {
     goto out;
@@ -560,18 +565,24 @@ bbb_pwm_unclaim(struct bbb_pwm_t *bp)
   assert(bp != NULL);
 
   bp->bp_state = BPS_UNCLAIMED;
-  // Close the duty file.
+ 
+	// Close all files.
+	if(bp->bp_running_state_file != NULL) {
+    file_close_and_unclaim(bp->bp_running_state_file);
+    bp->bp_running_state_file = NULL;
+  }
+
   if(bp->bp_duty_file != NULL) {
     file_close_and_unclaim(bp->bp_duty_file);
     bp->bp_duty_file = NULL;
   }
-  // Close the period file.
+
   if(bp->bp_period_file != NULL) {
     file_close_and_unclaim(bp->bp_period_file);
     bp->bp_period_file = NULL;
   }
-  // Close the polarity file.
-  if(bp->bp_polarity_file != NULL) {
+  
+	if(bp->bp_polarity_file != NULL) {
     file_close_and_unclaim(bp->bp_polarity_file);
     bp->bp_polarity_file = NULL;
   }
@@ -607,6 +618,25 @@ bbb_pwm_is_claimed(struct bbb_pwm_t *bp)
 }
 
 /**
+ * @brief Checks to see if the pwm is currently running.
+ *
+ * @param bp The pwm to check.
+ *
+ * @return -1 on failure, 0 when not running, 1 when running.
+ */
+int
+bbb_pwm_is_running(struct bbb_pwm_t *bp)
+{
+	int8_t running_state;
+
+	if(bbb_pwm_get_running_state(bp, &running_state) != BPRC_OK) {
+		return -1;
+	}
+
+	return running_state ? 1 : 0;
+}
+
+/**
  * @brief Get the next pwm in a sorted list of pwms.
  *
  * @param bp The pwm to get the next pwm from.
@@ -618,6 +648,65 @@ bbb_pwm_get_next_pwm(struct bbb_pwm_t *bp)
 {
 	assert(bp != NULL);
 	return bp->bp_next;
+}
+
+/**
+ * @brief Start a pwm.
+ *
+ * @param bp The pwm to start.
+ *
+ * @return A status code.
+ */
+int 
+bbb_pwm_start(struct bbb_pwm_t* bp)
+{
+	return bbb_pwm_set_running_state(bp, 1);
+}
+
+/**
+ * @brief Stop the pwm from running.
+ *
+ * @param bp The pwm to stop.
+ *
+ * @return A status code.
+ */
+int 
+bbb_pwm_stop(struct bbb_pwm_t* bp)
+{
+	return bbb_pwm_set_running_state(bp, 0);
+}
+
+/**
+ * @brief Set the running_state of the pwm.
+ * NOTE: The pwm must be claimed to set anything on it.
+ *
+ * @param bp The pwm to set.
+ * @param running_state The running_state to set the pwm to.
+ *
+ * @return A status code.
+ */
+int
+bbb_pwm_set_running_state(struct bbb_pwm_t *bp, int8_t running_state)
+{
+  int result;
+  assert(bp != NULL);
+
+  if(!bbb_pwm_is_claimed(bp)) {
+    return BPRC_NOT_CLAIMED;
+  }
+
+	if(running_state < 0 || running_state > 1) {
+		return BPRC_RANGE;
+	}
+
+	// Write the data.
+  result = file_write_int8(bp->bp_running_state_file, running_state);
+  if(result != BPRC_OK) {
+    return result;
+  }
+
+  bp->bp_running_state = running_state;
+  return BPRC_OK;
 }
 
 /**
@@ -804,6 +893,13 @@ bbb_pwm_set_frequency(struct bbb_pwm_t *bp, uint32_t hertz)
   return bbb_pwm_set_period(bp, period);
 }
 
+/**
+ * @brief Get the name of a pwm.
+ *
+ * @param bp THe pwm to get the name of.
+ *
+ * @return The name of the pwm.
+ */
 const char* 
 bbb_pwm_get_name(struct bbb_pwm_t* bp)
 {
@@ -811,11 +907,57 @@ bbb_pwm_get_name(struct bbb_pwm_t* bp)
 	return bp->bp_name;
 }
 
+/**
+ * @brief Get the path to a pwm.
+ *
+ * @param bp The pwm to get the path to.
+ *
+ * @return The path to the pwm.
+ */
 const char* 
 bbb_pwm_get_path(struct bbb_pwm_t* bp)
 {
 	assert(bp != NULL);
-	return bp->bp_name;
+	return bp->bp_path;
+}
+
+
+/**
+ * @brief Get the current running state of a pwm.
+ * If the pwm isn't claimed, we attempt to open the right file for reading.
+ * Note that this may fail if someone else owns it.
+ *
+ * @param bp The pwm to get the running state of.
+ * @param[out] out_running_state The running state.
+ *
+ * @return A statuse code.
+ */
+int 
+bbb_pwm_get_running_state(struct bbb_pwm_t *bp, int8_t *out_running_state)
+{
+  FILE *run_file = NULL;
+  int result = BPRC_OK;
+
+  assert(bp != NULL);
+  assert(out_running_state != NULL);
+
+  if(bbb_pwm_is_claimed(bp)) {
+    *out_running_state = bp->bp_running_state;
+    goto out;
+  }
+
+  run_file = fopen(bp->bp_running_state_file_path, "r");
+  if(run_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
+
+  result = file_read_int8(run_file, out_running_state);
+out:
+  if(run_file != NULL) {
+    fclose(run_file);
+  }
+  return result;
 }
 
 /**
