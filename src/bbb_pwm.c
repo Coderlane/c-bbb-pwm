@@ -146,7 +146,7 @@ bbb_pwm_controller_probe(struct bbb_pwm_controller_t *bpc)
       bbb_pwm_controller_add_pwm(bpc, pwm);
     }
 
-		udev_device_unref(dev);
+    udev_device_unref(dev);
   }
 
   udev_enumerate_unref(enumer);
@@ -319,7 +319,7 @@ bbb_pwm_controller_has_pwm(struct bbb_pwm_controller_t *bpc,
  *
  * @param bpc The pwm_controller to get the pwm from.
  * @param name The name of the pwm to get.
- * 
+ *
  * @return A pwm if found, NULL if not found.
  */
 struct bbb_pwm_t *
@@ -329,8 +329,8 @@ bbb_pwm_controller_get_pwm(struct bbb_pwm_controller_t *bpc,
   assert(bpc != NULL);
   assert(name != NULL);
 
-	foreach_pwm(bp, bpc) {
-		int result = strcmp(bp->bp_name, name);
+  foreach_pwm(bp, bpc) {
+    int result = strcmp(bp->bp_name, name);
     if(result == 0) {
       return bp;
     }
@@ -339,7 +339,7 @@ bbb_pwm_controller_get_pwm(struct bbb_pwm_controller_t *bpc,
       // Item can't possibly be in our list.
       return NULL;
     }
-	}
+  }
 
   return NULL;
 }
@@ -354,8 +354,8 @@ bbb_pwm_controller_get_pwm(struct bbb_pwm_controller_t *bpc,
 struct bbb_pwm_t *
 bbb_pwm_controller_get_head_pwm(struct bbb_pwm_controller_t *bpc)
 {
-	assert(bpc != NULL);
-	return bpc->bpc_head_pwm;
+  assert(bpc != NULL);
+  return bpc->bpc_head_pwm;
 }
 
 /**
@@ -364,7 +364,7 @@ bbb_pwm_controller_get_head_pwm(struct bbb_pwm_controller_t *bpc)
  * @param name The name of the new pwm.
  * @param path
  *
- * @return A new pwm or NULL on failure. 
+ * @return A new pwm or NULL on failure.
  */
 struct bbb_pwm_t *
 bbb_pwm_new(const char *name, const char *path)
@@ -390,37 +390,37 @@ bbb_pwm_new(const char *name, const char *path)
     goto out;
   }
 
-	// Copy the path
+  // Copy the path
   bp->bp_path = (char *) strdup(path);
   if(bp->bp_path == NULL) {
     bbb_pwm_delete(&bp);
     goto out;
   }
 
-  // Setup our paths.
-	result = asprintf(&(bp->bp_running_state_file_path),
-                    "%s/%s", path, "run");
+  // Setup our bp->bp_paths.
+  result = asprintf(&(bp->bp_running_state_file_path),
+                    "%s/%s", bp->bp_path, "run");
   if(result < 0) {
     bbb_pwm_delete(&bp);
     goto out;
   }
-  
-	result = asprintf(&(bp->bp_duty_file_path),
-                    "%s/%s", path, "duty");
+
+  result = asprintf(&(bp->bp_duty_file_path),
+                    "%s/%s", bp->bp_path, "duty");
   if(result < 0) {
     bbb_pwm_delete(&bp);
     goto out;
   }
 
   result = asprintf(&(bp->bp_period_file_path),
-                    "%s/%s", path, "period");
+                    "%s/%s", bp->bp_path, "period");
   if(result < 0) {
     bbb_pwm_delete(&bp);
     goto out;
   }
 
   result = asprintf(&(bp->bp_polarity_file_path),
-                    "%s/%s", path, "polarity");
+                    "%s/%s", bp->bp_path, "polarity");
   if(result < 0) {
     bbb_pwm_delete(&bp);
     goto out;
@@ -497,7 +497,8 @@ bbb_pwm_claim(struct bbb_pwm_t *bp)
   assert(bp->bp_polarity_file_path != NULL);
 
   // Open the necessary files.
-  bp->bp_running_state_file = file_open_and_claim(bp->bp_running_state_file_path, "r+");
+  bp->bp_running_state_file =
+    file_open_and_claim(bp->bp_running_state_file_path, "r+");
   if(bp->bp_running_state_file == NULL) {
     result = BPRC_BUSY;
     goto out;
@@ -522,7 +523,7 @@ bbb_pwm_claim(struct bbb_pwm_t *bp)
   }
 
   // Load the cached values.
-	result = file_read_int8(bp->bp_running_state_file, &(bp->bp_running_state));
+  result = file_read_int8(bp->bp_running_state_file, &(bp->bp_running_state));
   if(result != BPRC_OK) {
     goto out;
   }
@@ -565,9 +566,9 @@ bbb_pwm_unclaim(struct bbb_pwm_t *bp)
   assert(bp != NULL);
 
   bp->bp_state = BPS_UNCLAIMED;
- 
-	// Close all files.
-	if(bp->bp_running_state_file != NULL) {
+
+  // Close all files.
+  if(bp->bp_running_state_file != NULL) {
     file_close_and_unclaim(bp->bp_running_state_file);
     bp->bp_running_state_file = NULL;
   }
@@ -581,8 +582,8 @@ bbb_pwm_unclaim(struct bbb_pwm_t *bp)
     file_close_and_unclaim(bp->bp_period_file);
     bp->bp_period_file = NULL;
   }
-  
-	if(bp->bp_polarity_file != NULL) {
+
+  if(bp->bp_polarity_file != NULL) {
     file_close_and_unclaim(bp->bp_polarity_file);
     bp->bp_polarity_file = NULL;
   }
@@ -627,13 +628,13 @@ bbb_pwm_is_claimed(struct bbb_pwm_t *bp)
 int
 bbb_pwm_is_running(struct bbb_pwm_t *bp)
 {
-	int8_t running_state;
+  int8_t running_state;
 
-	if(bbb_pwm_get_running_state(bp, &running_state) != BPRC_OK) {
-		return -1;
-	}
+  if(bbb_pwm_get_running_state(bp, &running_state) != BPRC_OK) {
+    return -1;
+  }
 
-	return running_state ? 1 : 0;
+  return running_state ? 1 : 0;
 }
 
 /**
@@ -646,8 +647,8 @@ bbb_pwm_is_running(struct bbb_pwm_t *bp)
 struct bbb_pwm_t *
 bbb_pwm_get_next_pwm(struct bbb_pwm_t *bp)
 {
-	assert(bp != NULL);
-	return bp->bp_next;
+  assert(bp != NULL);
+  return bp->bp_next;
 }
 
 /**
@@ -657,10 +658,10 @@ bbb_pwm_get_next_pwm(struct bbb_pwm_t *bp)
  *
  * @return A status code.
  */
-int 
-bbb_pwm_start(struct bbb_pwm_t* bp)
+int
+bbb_pwm_start(struct bbb_pwm_t *bp)
 {
-	return bbb_pwm_set_running_state(bp, 1);
+  return bbb_pwm_set_running_state(bp, 1);
 }
 
 /**
@@ -670,10 +671,10 @@ bbb_pwm_start(struct bbb_pwm_t* bp)
  *
  * @return A status code.
  */
-int 
-bbb_pwm_stop(struct bbb_pwm_t* bp)
+int
+bbb_pwm_stop(struct bbb_pwm_t *bp)
 {
-	return bbb_pwm_set_running_state(bp, 0);
+  return bbb_pwm_set_running_state(bp, 0);
 }
 
 /**
@@ -695,11 +696,11 @@ bbb_pwm_set_running_state(struct bbb_pwm_t *bp, int8_t running_state)
     return BPRC_NOT_CLAIMED;
   }
 
-	if(running_state < 0 || running_state > 1) {
-		return BPRC_RANGE;
-	}
+  if(running_state < 0 || running_state > 1) {
+    return BPRC_RANGE;
+  }
 
-	// Write the data.
+  // Write the data.
   result = file_write_int8(bp->bp_running_state_file, running_state);
   if(result != BPRC_OK) {
     return result;
@@ -900,11 +901,11 @@ bbb_pwm_set_frequency(struct bbb_pwm_t *bp, uint32_t hertz)
  *
  * @return The name of the pwm.
  */
-const char* 
-bbb_pwm_get_name(struct bbb_pwm_t* bp)
+const char *
+bbb_pwm_get_name(struct bbb_pwm_t *bp)
 {
-	assert(bp != NULL);
-	return bp->bp_name;
+  assert(bp != NULL);
+  return bp->bp_name;
 }
 
 /**
@@ -914,11 +915,11 @@ bbb_pwm_get_name(struct bbb_pwm_t* bp)
  *
  * @return The path to the pwm.
  */
-const char* 
-bbb_pwm_get_path(struct bbb_pwm_t* bp)
+const char *
+bbb_pwm_get_path(struct bbb_pwm_t *bp)
 {
-	assert(bp != NULL);
-	return bp->bp_path;
+  assert(bp != NULL);
+  return bp->bp_path;
 }
 
 
@@ -932,7 +933,7 @@ bbb_pwm_get_path(struct bbb_pwm_t* bp)
  *
  * @return A statuse code.
  */
-int 
+int
 bbb_pwm_get_running_state(struct bbb_pwm_t *bp, int8_t *out_running_state)
 {
   FILE *run_file = NULL;
