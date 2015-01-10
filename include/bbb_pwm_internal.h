@@ -3,7 +3,7 @@
  * @brief Unexported innerworkings of the pwm controller and the pwms.
  * Note: This is really meant for internal use only.
  * @author Travis Lane
- * @version 0.1.2
+ * @version 0.2.0
  * @date 2014-12-25
  */
 

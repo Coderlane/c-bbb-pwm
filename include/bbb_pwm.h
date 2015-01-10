@@ -3,7 +3,7 @@
  * @brief The exported functions and interfaces for the pwm controller and
  * the pwms.
  * @author Travis Lane
- * @version 0.1.2
+ * @version 0.2.0
  * @date 2014-12-25
  */
 
