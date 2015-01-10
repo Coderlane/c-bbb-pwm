@@ -145,6 +145,8 @@ bbb_pwm_controller_probe(struct bbb_pwm_controller_t *bpc)
       pwm = bbb_pwm_new(name, path);
       bbb_pwm_controller_add_pwm(bpc, pwm);
     }
+
+		udev_device_unref(dev);
   }
 
   udev_enumerate_unref(enumer);
