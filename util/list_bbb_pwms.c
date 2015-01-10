@@ -21,5 +21,7 @@ int main()
 		printf("%s\n", bbb_pwm_get_name(bp));
 	}
 
+	bbb_pwm_controller_delete(&bpc);
+
   return 0;
 }
