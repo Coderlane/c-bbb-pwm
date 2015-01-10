@@ -12,21 +12,9 @@
 
 #define _GNU_SOURCE
 
-#include "bbb_pwm.h"
-#include "bbb_capemgr.h"
-
-#include <libudev.h>
-
-#include <sys/file.h>
-
-#include <assert.h>
-#include <fcntl.h>
 #include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <inttypes.h>
-#include <unistd.h>
+
+#include "bbb_pwm.h"
 
 /**
  * @brief Represents a detected pwm.
@@ -109,11 +97,6 @@ struct bbb_pwm_controller_t {
    * @brief The individual pwms.
    */
   struct bbb_pwm_t 	 		 *bpc_head_pwm;
-
-  /**
-   * @brief The capemanager.
-   */
-  struct bbb_capemgr_t 	 *bpc_capemgr;
 };
 
 int bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc);

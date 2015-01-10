@@ -7,7 +7,22 @@
  * @date 2014-12-25
  */
 
-#include <bbb_pwm_internal.h>
+
+#define _GNU_SOURCE
+
+#include <libudev.h>
+
+#include <sys/file.h>
+
+#include <assert.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <inttypes.h>
+#include <unistd.h>
+#include "../include/bbb_pwm_internal.h"
 
 /**
  * @brief Create a new controller.
@@ -47,7 +62,8 @@ bbb_pwm_controller_delete(struct bbb_pwm_controller_t **bpc_ptr)
   if(bpc_ptr == NULL) {
     return;
   }
-  // Check the referenced ptr.
+  
+	// Check the referenced ptr.
   bpc = (*bpc_ptr);
   if(bpc == NULL) {
     return;
@@ -74,17 +90,6 @@ bbb_pwm_controller_delete(struct bbb_pwm_controller_t **bpc_ptr)
 int
 bbb_pwm_controller_init(struct bbb_pwm_controller_t *bpc)
 {
-  // Create a new bbb_capemgr to talk to the capemanager.
-  bpc->bpc_capemgr = bbb_capemgr_new();
-  if(bpc->bpc_capemgr == NULL) {
-    return BPRC_NO_CAPEMGR;
-  }
-
-  // Enable the am33xx pwm controller on the cape manager.
-  if(bbb_capemgr_enable(bpc->bpc_capemgr, "am33xx_pwm") < 0) {
-    return BPRC_NO_PWM;
-  }
-
   // Probing can fail and it isn't the end of the world.
   // Maybe emit a warning?
   bbb_pwm_controller_probe(bpc);

@@ -6,7 +6,7 @@
  * @date 2014-12-22
  */
 
-#include <bbb_pwm_internal.h>
+
 
 #include "test_macros.h"
 
@@ -15,6 +15,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
+#include "../include/bbb_pwm_internal.h"
 
 void test_claim_unclaim();
 
