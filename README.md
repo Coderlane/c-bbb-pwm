@@ -22,10 +22,7 @@ it to be able to build c-bbb-pwm. On Ubuntu the package you want is libudev-dev.
 ### Setting Up uEnv.txt
 
 Before you are able to do anything useful with the library,
-you will need to configure your output pins. Possibly disabling
-some features in the process. The file you are interested in 
-will be /boot/uEnv.txt, here we can enable and disable parts.
-
+you will need to configure your output pins. 
 Open /boot/uEnv.txt as root using your favorite text editor.
 Then look for these two lines.
 
@@ -42,6 +39,10 @@ To disable them I added:
 Then I chose to enable pwm\_P8\_46
 
       cape_enable=capemgr.enable_partno=BB-UART5,am33xx_pwm,bone_pwm_P8_46
+      
+You will most likely need to disable some parts to enable the pwms.
+The documentation on this process is a bit iffy. 
+I'll write something up to explain it better at some point.
 
 To enable any pwm, you first need to enable the UART5 part,
 as well as the am3xx\_pwm part. Then you can add any pwm you want.
