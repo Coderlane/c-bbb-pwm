@@ -109,4 +109,4 @@ In the future I'll upload these online, but not yet.
  * No automatic enabling/disabling of capemgr devices. 
  * Requires root :/
  * Probably not thread safe
- * Others. It's v0.3.0, I'm working on it!
+ * Others. It's v0.2.0, I'm working on it!
