@@ -23,14 +23,8 @@ Unfortunatly v0.1.0 isn't super usable. You'll want to include both bbb_pwm.h an
       #include <bbb_pwm/bbb_pwm_internal.h>
       #include <bbb_pwm/bbb_pwm.h>
       
-      struct bbb_capemgr_t* cm;
-      struct bbb_pwm_t* bp;
-      
-      // This isn't strictly necessary.
-      // Especially if you enable it yourself.
-      cm = bbb_capemgr_new();
-      bbb_capemgr_enable(cm, "am33xx_pwm");
-      
+      struct bbb_pwm_t* bp
+
       // Make a pwm, we need the path to it. That is your job.
       bp = bbb_pwm_new("test_pwm", "PATH TO THIS PWM's ROOT");
       // Claim it so we can open some files.
