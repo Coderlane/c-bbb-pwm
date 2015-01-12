@@ -28,6 +28,7 @@ will be /boot/uEnv.txt, here we can enable and disable parts.
 
 Open /boot/uEnv.txt as root using your favorite text editor.
 Then look for these two lines.
+
       cape_disable=capemgr.disable_partno=
       cape_enable=capemgr.enable_partno=
 
@@ -35,9 +36,11 @@ You'll need to choose what you want to put on those lines.
 For example, I don't need HDMI or the built in eMMC.
 
 To disable them I added:
+
       cape_disable=capemgr.disable_partno=BB-BONELT-HDMI,BB-BONELT-HDMIN,BB-BONE-EMMC-2G
 
 Then I chose to enable pwm\_P8\_46
+
       cape_enable=capemgr.enable_partno=BB-UART5,am33xx_pwm,bone_pwm_P8_46
 
 To enable any pwm, you first need to enable the UART5 part,
@@ -61,7 +64,7 @@ You would normally then start the PWM, but I don't want to right now.
 			int main() 
 			{
 				struct bbb_pwm_controller_t* bpc = NULL; 
-    	  struct bbb_pwm_t* bp = NULL;
+				struct bbb_pwm_t* bp = NULL;
 				char* pwm_name = "pwm_test_P8_46";
 			
 				bpc = bbb_pwm_controller_new();
@@ -79,16 +82,16 @@ You would normally then start the PWM, but I don't want to right now.
 				}
       	
 				// Claim it so we can open some files.
-      	bbb_pwm_claim(bp);
+				bbb_pwm_claim(bp);
 				
 				// Stop the pwm so we don't accidentally do something.
 				bbb_pwm_stop(bp);
       
 				// Lets try setting the duty_percent to FULL SPEED.
-      	bbb_pwm_set_duty_percent(bp, 100.0f);
+				bbb_pwm_set_duty_percent(bp, 100.0f);
 
-			out:
-      	// Free the controller and all of the PWMs it manages.	
+			out
+				// Free the controller and all of the PWMs it manages.	
 				bbb_pwm_controller_delete(&bpc);
 				return 0;
 			}
