@@ -455,6 +455,14 @@ bbb_pwm_delete(struct bbb_pwm_t **bp_ptr)
     free(bp->bp_name);
   }
 
+	if(bp->bp_path != NULL) {
+		free(bp->bp_path);
+	}
+
+	if(bp->bp_running_state_file_path != NULL) {
+    free(bp->bp_running_state_file_path);
+  }
+
   if(bp->bp_duty_file_path != NULL) {
     free(bp->bp_duty_file_path);
   }
