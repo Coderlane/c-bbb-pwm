@@ -21,6 +21,7 @@
 
 void test_claim_unclaim();
 
+void test_set_get_running_state();
 void test_set_get_duty_cycle();
 void test_set_get_period();
 void test_set_get_polarity();
@@ -80,6 +81,30 @@ test_claim_unclaim()
 
   bbb_pwm_test_delete(&bp);
 }
+
+/**
+ * @brief Test setting and getting valid running states
+ */
+void
+test_set_get_running_state()
+{
+  int8_t running_state = 0;
+  struct bbb_pwm_t *bp;
+  bp = bbb_pwm_test_new("test_set_get_running_state", 1, 1);
+
+  expect_eq(bbb_pwm_claim(bp), BPRC_OK);
+
+  expect_eq(bbb_pwm_set_running_state(bp, 1), BPRC_OK);
+  expect_eq(bbb_pwm_get_running_state(bp, &running_state), BPRC_OK);
+  expect_eq(running_state, 100);
+
+  expect_eq(bbb_pwm_set_running_state(bp, 0), BPRC_OK);
+  expect_eq(bbb_pwm_get_running_state(bp, &running_state), BPRC_OK);
+  expect_eq(running_state, 0);
+
+  bbb_pwm_test_delete(&bp);
+}
+
 
 /**
  * @brief Test setting and getting valid duty cycles.
@@ -356,24 +381,29 @@ bbb_pwm_test_new(const char *name, int create_files, int init_files)
 
   if(create_files) {
     FILE *fp;
-
-    // Touch the duty file and init if necessary.
+    // Touch files and init if necessary
+    // Running state.
+    fp = fopen(bp->bp_running_state_file_path, "w");
+    if(init_files) {
+      fprintf(fp, "%d", 0);
+    }
+    assert(fp != NULL);
+    fclose(fp);
+    // Duty
     fp = fopen(bp->bp_duty_file_path, "w");
     if(init_files) {
       fprintf(fp, "%d", 0);
     }
     assert(fp != NULL);
     fclose(fp);
-
-    // Touch the period file and init if necessary.
+    // Period
     fp = fopen(bp->bp_period_file_path, "w");
     assert(fp != NULL);
     if(init_files) {
       fprintf(fp, "%d", 20000000);
     }
     fclose(fp);
-
-    // Touch the polarity file and init if necessary.
+    // Polarity
     fp = fopen(bp->bp_polarity_file_path, "w");
     assert(fp != NULL);
     if(init_files) {
