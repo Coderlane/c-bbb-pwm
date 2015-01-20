@@ -11,8 +11,6 @@ int main(int argc, char **argv);
 int parse_args(int argc, char **argv);
 void usage();
 
-static char *prog_name = NULL;
-
 /**
  * @brief
  *
@@ -24,7 +22,6 @@ static char *prog_name = NULL;
 int
 main(int argc, char **argv)
 {
-
   if(parse_args(argc, argv) < 0) {
     usage();
   }
@@ -34,19 +31,29 @@ main(int argc, char **argv)
 void
 usage()
 {
+  printf("usage: bbb_pwm_tool [arguements]\n");
+  printf("usage: bbb_pwm_tool [pwm] [get/set] [value]\n\n");
 
-  printf("usage: %s\n", prog_name);
+  printf("Arguements:\n");
+  printf("Values:\n");
 }
 
 int
 parse_args(int argc, char **argv)
 {
-  if(argc < 1) {
+  if(argc <= 1) {
+		usage();
     return -1;
-  }
-
-  prog_name = basename(argv[0]);
-  assert(prog_name != NULL);
-
-  return -1;
+	}
+	
+	if(argv[1][0] == '-') {
+		// Parse arguements
+		return 0;
+	} else if(argc == 4) {
+		// Get/Set the various arguements.
+		return 0;
+	} else {
+		// Invalid.
+  	return -2;
+	}
 }
