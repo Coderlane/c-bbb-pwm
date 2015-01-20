@@ -1,4 +1,5 @@
 
+#include <assert.h>
 #include <libgen.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -7,7 +8,10 @@
 #include <bbb_pwm.h>
 
 int main(int argc, char **argv);
-int usage(char *prog_path);
+int parse_args(int argc, char **argv);
+void usage();
+
+static char *prog_name = NULL;
 
 /**
  * @brief
@@ -17,16 +21,32 @@ int usage(char *prog_path);
  *
  * @return
  */
-int 
+int
 main(int argc, char **argv)
 {
-	usage(argv[0]);
+
+  if(parse_args(argc, argv) < 0) {
+    usage();
+  }
+
 }
 
-int 
-usage(char *prog_path)
+void
+usage()
 {
-	char *prog_name = basename(prog_path);
 
-	printf("usage: %s\n", prog_name);
+  printf("usage: %s\n", prog_name);
+}
+
+int
+parse_args(int argc, char **argv)
+{
+  if(argc < 1) {
+    return -1;
+  }
+
+  prog_name = basename(argv[0]);
+  assert(prog_name != NULL);
+
+  return -1;
 }
