@@ -1,3 +1,10 @@
+/**
+ * @file bbb_pwm_tool.c
+ * @brief A tool to work with PWMs on a BeagleBone Black.
+ * @author Travis Lane
+ * @version 0.1.0
+ * @date 2015-01-20
+ */
 
 #include <assert.h>
 #include <ctype.h>
@@ -113,14 +120,24 @@ parse_args(int argc, char **argv)
 
 void version()
 {
-
+	printf("bbb_pwm_tool 0.1.0\n");
 }
 
 int
 list_pwms()
 {
-  return -1;
+	struct bbb_pwm_controller_t *bpc = NULL;
+	
+	bpc = bbb_pwm_controller_new();
+
+	foreach_pwm(bp, bpc) {
+		printf("%s\n", bbb_pwm_get_name(bp));
+	}
+
+	bbb_pwm_controller_delete(&bpc);
+  return 0;
 }
+
 
 int
 do_pwms()
