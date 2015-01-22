@@ -27,7 +27,7 @@ enum bpt_tool_op_e parse_args(int argc, char **argv);
 void usage();
 void version();
 int list_pwms();
-int do_pwms();
+int do_pwms(int argc, char **argv);
 
 
 /**
@@ -62,6 +62,9 @@ main(int argc, char **argv)
   return -1;
 }
 
+/**
+ * @brief 
+ */
 void
 usage()
 {
@@ -83,6 +86,14 @@ usage()
   printf("\trunning\t\tThe running state of the PWM. 0 is OFF, 1 is ON.\n");
 }
 
+/**
+ * @brief 
+ *
+ * @param argc
+ * @param argv
+ *
+ * @return 
+ */
 enum bpt_tool_op_e
 parse_args(int argc, char **argv)
 {
@@ -118,11 +129,19 @@ parse_args(int argc, char **argv)
   return BPT_NO_OPT;
 }
 
+/**
+ * @brief 
+ */
 void version()
 {
 	printf("bbb_pwm_tool 0.1.0\n");
 }
 
+/**
+ * @brief 
+ *
+ * @return 
+ */
 int
 list_pwms()
 {
@@ -138,9 +157,17 @@ list_pwms()
   return 0;
 }
 
-
+/**
+ * @brief 
+ *
+ * @return 
+ */
 int
-do_pwms()
+do_pwms(int argc, char **argv)
 {
-  return -1;
+	if(argc - optind % 3 == 0) {
+		fprintf(stderr, "Invalid number of pwm options.\n");
+		return -3;
+	}
+
 }
