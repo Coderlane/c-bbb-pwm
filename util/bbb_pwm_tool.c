@@ -28,7 +28,8 @@ void usage();
 void version();
 int list_pwms();
 int do_pwms(int argc, char **argv);
-
+int do_pwm(struct bbb_ptm_t *pwm, char *get_set_str,
+           char *opt_str, char *val_str);
 
 /**
  * @brief
@@ -63,7 +64,7 @@ main(int argc, char **argv)
 }
 
 /**
- * @brief 
+ * @brief
  */
 void
 usage()
@@ -87,12 +88,12 @@ usage()
 }
 
 /**
- * @brief 
+ * @brief
  *
  * @param argc
  * @param argv
  *
- * @return 
+ * @return
  */
 enum bpt_tool_op_e
 parse_args(int argc, char **argv)
@@ -130,46 +131,76 @@ parse_args(int argc, char **argv)
 }
 
 /**
- * @brief 
+ * @brief
  */
 void version()
 {
-	printf("bbb_pwm_tool 0.1.0\n");
+  printf("bbb_pwm_tool 0.1.0\n");
 }
 
 /**
- * @brief 
+ * @brief
  *
- * @return 
+ * @return
  */
 int
 list_pwms()
 {
-	struct bbb_pwm_controller_t *bpc = NULL;
-	
-	bpc = bbb_pwm_controller_new();
+  struct bbb_pwm_controller_t *bpc = NULL;
 
-	foreach_pwm(bp, bpc) {
-		printf("%s\n", bbb_pwm_get_name(bp));
-	}
+  bpc = bbb_pwm_controller_new();
 
-	bbb_pwm_controller_delete(&bpc);
+  foreach_pwm(bp, bpc) {
+    printf("%s\n", bbb_pwm_get_name(bp));
+  }
+
+  bbb_pwm_controller_delete(&bpc);
   return 0;
 }
 
 /**
- * @brief 
+ * @brief
  *
- * @return 
+ * @return
  */
 int
 do_pwms(int argc, char **argv)
 {
-	if((argc - optind) % 3 != 0) {
-		fprintf(stderr, "Invalid number of pwm options.\n");
-		return -3;
-	}
+  char *pwm_name, char *get_set_str, char *opt_str, char *val_str;
+  int result, optsrt;
+  struct bbb_ptm_t *pwm;
+  struct bbb_pwm_controller_t *bpc = NULL;
+
+  bpc = bbb_pwm_controller_new();
+  optsrt = optind;
 
 
-	return 0;
+  bbb_pwm_controller_get_pwm(bpc, argv[optsrt]);
+
+  result = do_pwm(pwm, get_set_str, opt_str, val_str);
+  if(result != NULL) {
+    goto out;
+  }
+
+out:
+  if(bpc != NULL) {
+    bbb_pwm_controller_delete(&bpc);
+  }
+  return result;
+}
+
+int
+do_pwm(struct bbb_ptm_t *pwm, char *get_set_str, char *opt_str, char *val_str)
+{
+  if(pwm == NULL) {
+    fprintf(stderr, "Failed to find pwm: %s\n", pwm_name);
+    return -2;
+  }
+
+  if(strcmp(get_set_str, "get") != 0 && strcmp(get_set_str, "set") != 0) {
+
+  }
+
+
+
 }
