@@ -54,7 +54,7 @@ main(int argc, char **argv)
   case BPT_LIST:
     return list_pwms();
   case BPT_NO_OPT:
-    return do_pwms();
+    return do_pwms(argc, argv);
   default:
     usage();
     return -1;
@@ -165,9 +165,11 @@ list_pwms()
 int
 do_pwms(int argc, char **argv)
 {
-	if(argc - optind % 3 == 0) {
+	if((argc - optind) % 3 != 0) {
 		fprintf(stderr, "Invalid number of pwm options.\n");
 		return -3;
 	}
 
+
+	return 0;
 }
