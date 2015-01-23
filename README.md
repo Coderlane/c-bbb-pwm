@@ -13,7 +13,7 @@ it to be able to build c-bbb-pwm. On Ubuntu the package you want is libudev-dev.
       git clone https://github.com/Coderlane/c-bbb-pwm.git
       cd c-bbb-pwm
       mkdir build && cd build
-      ccmake ..
+      cmake ..
       make
       sudo make install
 
@@ -97,10 +97,17 @@ You would normally then start the PWM, but I don't want to right now.
 		bbb_pwm_controller_delete(&bpc);
 		return 0;
 	}
+	
+### Utilities
+
+I've written a full demo application bbb_pwm_tool.
+With bbb_pwm_tool you can list all of the detected pwms on board,
+and then get/set values just like you would in a program.
+It is great for calibrating a Electronic Speed Controller!
 
 ## Documentation
  
- Build yer own! I use doxygen, just open the Doxyfile with doxywizard or 
+Build yer own! I use doxygen, just open the Doxyfile with doxywizard or 
 simmilar and output whatever type of files you want. 
 In the future I'll upload these online, but not yet.
  
@@ -108,5 +115,5 @@ In the future I'll upload these online, but not yet.
 
  * No automatic enabling/disabling of capemgr devices. 
  * Requires root :/
- * Probably not thread safe
+ * Not thread safe
  * Others. It's v0.2.0, I'm working on it!
