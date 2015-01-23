@@ -9,9 +9,11 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <inttypes.h>
 
 #include <bbb_pwm.h>
 
@@ -20,10 +22,25 @@ enum pwm_tool_op_e {
   BPT_NO_OPT = 0,
   BPT_HELP = 1,
   BPT_VERSION = 2,
-  BPT_LIST = 3,
-	BPT_GET = 10,
-	BPT_SET = 11
+  BPT_LIST = 3
 };
+
+enum pwm_tool_gs_e {
+	BPT_GET = 0,
+	BPT_SET = 1
+};
+
+enum pwm_tool_func_e {
+  BPT_DUTY_CYCLE_FUNC,
+  BPT_PERIOD_FUNC,
+  BPT_POLARITY_FUNC,
+  BPT_DUTY_PERCENT_FUNC,
+  BPT_FREQUENCY_FUNC,
+  BPT_RUNNING_FUNC,
+  BPT_INVALID_FUNC
+};
+
+typedef int (*pwm_tool_func_t)(struct bbb_pwm_t *, enum pwm_tool_gs_e, char *);
 
 int main(int argc, char **argv);
 enum pwm_tool_op_e parse_args(int argc, char **argv);
@@ -33,6 +50,24 @@ int list_pwms();
 int do_pwms(int argc, char **argv);
 int do_pwm(struct bbb_pwm_t *pwm, char *get_set_str,
            char *opt_str, char *val_str);
+
+int do_duty_cycle(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str);
+
+int do_period(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str);
+int do_polarity(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str);
+int do_duty_percent(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str);
+int do_frequency(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str);
+int do_running(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str);
+
+static pwm_tool_func_t pwm_tool_func_arr[] = {
+  do_duty_cycle, do_period, do_polarity,
+  do_duty_percent, do_frequency, do_running
+};
+
+static char *pwm_tool_func_strs_arr[] = {
+  "duty_cycle", "period", "polarity", "duty_percent",
+  "frequency", "running"
+};
 
 /**
  * @brief
@@ -178,29 +213,29 @@ do_pwms(int argc, char **argv)
 
   bpc = bbb_pwm_controller_new();
   optsrt = optind;
-	optend = argc - optsrt;
+  optend = argc - optsrt;
 
-	if(optsrt - optend < 3 || optsrt - optend > 4) {
-		fprintf(stderr, "Error, invalid number of options.");
-		result = -3;
-		goto out;
-	}
+  if(optsrt - optend < 3 || optsrt - optend > 4) {
+    fprintf(stderr, "Error, invalid number of options.");
+    result = -3;
+    goto out;
+  }
 
-	pwm_name = argv[optsrt];
-	get_set_str = argv[optsrt];
-	opt_str = argv[optsrt];
-	if(optsrt - optend == 4) {
-		val_str = argv[optsrt];
-	}
+  pwm_name = argv[optsrt];
+  get_set_str = argv[optsrt];
+  opt_str = argv[optsrt];
+  if(optsrt - optend == 4) {
+    val_str = argv[optsrt];
+  }
 
-  pwm = bbb_pwm_controller_get_pwm(bpc, pwm_name); 
+  pwm = bbb_pwm_controller_get_pwm(bpc, pwm_name);
   if(pwm == NULL) {
     fprintf(stderr, "Failed to find pwm: %s\n", pwm_name);
-		result = -2;
-  	goto out;
-	}
-  
-	result = do_pwm(pwm, get_set_str, opt_str, val_str);
+    result = -2;
+    goto out;
+  }
+
+  result = do_pwm(pwm, get_set_str, opt_str, val_str);
 
 out:
   if(bpc != NULL) {
@@ -212,33 +247,243 @@ out:
 int
 do_pwm(struct bbb_pwm_t *pwm, char *get_set_str, char *opt_str, char *val_str)
 {
-	int get_set;
+  enum pwm_tool_gs_e get_set, result = 0;
 
-	if(strcmp(get_set_str, "set") == 0) {
-		get_set = BPT_SET;
-	} else if(strcmp(get_set_str, "get") == 0) {
-		get_set = BPT_GET;
-	} else {
-		fprintf(stderr, "Must be get or set, %s is invalid.\n", get_set_str);
-		return -4;
-	}
+  assert(pwm != NULL);
+  assert(get_set_str != NULL);
+  assert(opt_str != NULL);
 
-	if(strcmp(opt_str, "duty_cycle") == 0) {
+  if(strcmp(get_set_str, "set") == 0) {
+    get_set = BPT_SET;
+    assert(val_str != NULL);
+  } else if(strcmp(get_set_str, "get") == 0) {
+    get_set = BPT_GET;
+    if(bbb_pwm_claim(pwm) != BPRC_OK) {
+      fprintf(stderr, "Failed to claim pwm.\n");
+      result = -3;
+      goto out;
+    }
 
-	} else if(strcmp(opt_str, "polarity") == 0) {
+  } else {
+    fprintf(stderr, "Must be get or set, %s is invalid.\n", get_set_str);
+    result = -4;
+    goto out;
+  }
 
-	} else if(strcmp(opt_str, "period") == 0) {
+  for(int i = 0; i <= BPT_INVALID_FUNC; i++) {
+    if(i == BPT_INVALID_FUNC) {
+      fprintf(stderr, "Invalid option string: %s\n", opt_str);
+      result = -5;
+      goto out;
+    } else if(strcmp(pwm_tool_func_strs_arr[i], opt_str) == 0 ) {
+      result = pwm_tool_func_arr[i](pwm, get_set, val_str);
+      goto out;
+    }
+  }
+out:
+  if(pwm != NULL) {
+    if(bbb_pwm_is_claimed(pwm)) {
+      bbb_pwm_unclaim(pwm);
+    }
+  }
 
-	} else if(strcmp(opt_str, "duty_percent") == 0) {
+  return result;
+}
 
-	} else if(strcmp(opt_str, "frequency") == 0) {
+/**
+ * @brief
+ *
+ * @param pwm
+ * @param get_set
+ * @param val_str
+ *
+ * @return
+ */
+int
+do_duty_cycle(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str)
+{
+  int result;
+  uint32_t duty;
 
-	} else if(strcmp(opt_str, "running") == 0) {
+  assert(pwm != NULL);
+  assert(bbb_pwm_is_claimed(pwm));
+  assert(get_set == BPT_SET || get_set == BPT_GET);
 
-	} else {
-		fprintf(stderr, "Invalid get/set option: %s\n", opt_str);
-		return -5;
-	}
+  if(get_set == BPT_SET) {
+    // Try setting the duty cycle.
+    sscanf(val_str, "%" SCNu32 "", &duty);
+    result = bbb_pwm_set_duty_cycle(pwm, duty);
+  } else {
+    // Try getting the duty cycle.
+    result = bbb_pwm_get_duty_cycle(pwm, &duty);
+    if(result == BPRC_OK) {
+      printf("%"PRIu32"\n", duty);
+    } else {
+      fprintf(stderr, "Error getting pwm duty cycle.");
+    }
+  }
+  return result;
+}
 
-	return 0;
+/**
+ * @brief
+ *
+ * @param pwm
+ * @param get_set
+ * @param val_str
+ *
+ * @return
+ */
+int
+do_period(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str)
+{
+  int result;
+  uint32_t period;
+
+  assert(pwm != NULL);
+  assert(bbb_pwm_is_claimed(pwm));
+  assert(get_set == BPT_SET || get_set == BPT_GET);
+
+  if(get_set == BPT_SET) {
+    // Try setting the period cycle.
+    sscanf(val_str, "%" SCNu32 "", &period);
+    result = bbb_pwm_set_period(pwm, period);
+  } else {
+    // Try getting the period cycle.
+    result = bbb_pwm_get_period(pwm, &period);
+    if(result == BPRC_OK) {
+      printf("%"PRIu32"\n", period);
+    } else {
+      fprintf(stderr, "Error getting pwm period.");
+    }
+  }
+  return result;
+}
+
+/**
+ * @brief
+ *
+ * @param pwm
+ * @param get_set
+ * @param val_str
+ *
+ * @return
+ */
+int
+do_polarity(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str)
+{
+  int result;
+  int8_t polarity;
+
+  assert(pwm != NULL);
+  assert(bbb_pwm_is_claimed(pwm));
+  assert(get_set == BPT_SET || get_set == BPT_GET);
+
+  if(get_set == BPT_SET) {
+    // Try setting the polarity cycle.
+    sscanf(val_str, "%" SCNd8 "", &polarity);
+    result = bbb_pwm_set_polarity(pwm, polarity);
+  } else {
+    // Try getting the polarity cycle.
+    result = bbb_pwm_get_polarity(pwm, &polarity);
+    if(result == BPRC_OK) {
+      printf("%"PRId8"\n", polarity);
+    } else {
+      fprintf(stderr, "Error getting pwm polarity.");
+    }
+  }
+  return result;
+}
+
+/**
+ * @brief
+ *
+ * @param pwm
+ * @param get_set
+ * @param val_str
+ *
+ * @return
+ */
+int
+do_duty_percent(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str)
+{
+  int result;
+  float duty;
+
+  assert(pwm != NULL);
+  assert(bbb_pwm_is_claimed(pwm));
+  assert(get_set == BPT_SET || get_set == BPT_GET);
+
+  if(get_set == BPT_SET) {
+    // Try setting the duty percent.
+    sscanf(val_str, "%f", &duty);
+    result = bbb_pwm_set_duty_percent(pwm, duty);
+  } else {
+    // Try getting the duty percent.
+    result = bbb_pwm_get_duty_percent(pwm, &duty);
+    if(result == BPRC_OK) {
+      printf("%f\n", duty);
+    } else {
+      fprintf(stderr, "Error getting pwm duty percent.");
+    }
+  }
+  return result;
+}
+
+int
+do_frequency(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str)
+{
+  int result;
+  uint32_t frequency;
+
+  assert(pwm != NULL);
+  assert(bbb_pwm_is_claimed(pwm));
+  assert(get_set == BPT_SET || get_set == BPT_GET);
+
+  if(get_set == BPT_SET) {
+    // Try setting the frequency.
+    sscanf(val_str, "%"SCNu32, &frequency);
+    result = bbb_pwm_set_frequency(pwm, frequency);
+  } else {
+    // Try getting the frequency.
+    result = bbb_pwm_get_frequency(pwm, &frequency);
+    if(result == BPRC_OK) {
+      printf("%"PRIu32"\n", frequency);
+    } else {
+      fprintf(stderr, "Error getting pwm frequency.");
+    }
+  }
+  return result;
+}
+
+int
+do_running(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str)
+{
+	int result; 
+
+	assert(pwm != NULL);
+	assert(get_set == BPT_SET || get_set == BPT_GET);
+
+  if(get_set == BPT_SET) {
+    if(atoi(val_str)) {
+      result = bbb_pwm_start(pwm);
+			if(result != BPRC_OK) {
+				fprintf(stderr, "Failed to start pwm.\n");
+			}
+    } else {
+      result = bbb_pwm_stop(pwm);
+			if(result != BPRC_OK) {
+				fprintf(stderr, "Failed to stop pwm.\n");
+			}
+    }
+  } else {
+    if(bbb_pwm_is_running(pwm)) {
+      printf("1\n");
+    } else {
+      printf("0\n");
+    }
+		result = 0;
+  }
+
+	return result;
 }
