@@ -69,14 +69,6 @@ static char *pwm_tool_func_strs_arr[] = {
   "frequency", "running"
 };
 
-/**
- * @brief
- *
- * @param argc
- * @param argv
- *
- * @return
- */
 int
 main(int argc, char **argv)
 {
@@ -102,7 +94,7 @@ main(int argc, char **argv)
 }
 
 /**
- * @brief
+ * @brief Print the usage.
  */
 void
 usage()
@@ -128,12 +120,20 @@ usage()
 }
 
 /**
- * @brief
+ * @brief Print the version.
+ */
+void version()
+{
+  printf("bbb_pwm_tool 0.1.0\n");
+}
+
+/**
+ * @brief Parse the input arguements.
  *
- * @param argc
- * @param argv
+ * @param argc The number of arguements.
+ * @param argv The arguements.
  *
- * @return
+ * @return An enum representing what was input.
  */
 enum pwm_tool_op_e
 parse_args(int argc, char **argv)
@@ -171,17 +171,9 @@ parse_args(int argc, char **argv)
 }
 
 /**
- * @brief
- */
-void version()
-{
-  printf("bbb_pwm_tool 0.1.0\n");
-}
-
-/**
- * @brief
+ * @brief List the current pwms.
  *
- * @return
+ * @return A status code.
  */
 int
 list_pwms()
@@ -198,10 +190,14 @@ list_pwms()
   return 0;
 }
 
+
 /**
- * @brief
+ * @brief Attempts to run a command on the pwms.
  *
- * @return
+ * @param argc The number of arguements.
+ * @param argv The arguements.
+ *
+ * @return A status code.
  */
 int
 do_pwms(int argc, char **argv)
@@ -244,6 +240,16 @@ out:
   return result;
 }
 
+/**
+ * @brief Attempt to run a command for a pwm.
+ *
+ * @param pwm The pwm to run the command on.
+ * @param get_set_str "get" or "set".
+ * @param opt_str The option string.
+ * @param val_str The value to if set is chosen.
+ *
+ * @return A status code.
+ */
 int
 do_pwm(struct bbb_pwm_t *pwm, char *get_set_str, char *opt_str, char *val_str)
 {
@@ -259,20 +265,20 @@ do_pwm(struct bbb_pwm_t *pwm, char *get_set_str, char *opt_str, char *val_str)
   } else if(strcmp(get_set_str, "get") == 0) {
     get_set = BPT_GET;
     if(bbb_pwm_claim(pwm) != BPRC_OK) {
-      fprintf(stderr, "Failed to claim pwm.\n");
+      fprintf(stderr, "Error could not claim pwm.\n");
       result = -3;
       goto out;
     }
 
   } else {
-    fprintf(stderr, "Must be get or set, %s is invalid.\n", get_set_str);
+    fprintf(stderr, "Error, must be get or set, %s is invalid.\n", get_set_str);
     result = -4;
     goto out;
   }
 
   for(int i = 0; i <= BPT_INVALID_FUNC; i++) {
     if(i == BPT_INVALID_FUNC) {
-      fprintf(stderr, "Invalid option string: %s\n", opt_str);
+      fprintf(stderr, "Error, invalid option string: %s\n", opt_str);
       result = -5;
       goto out;
     } else if(strcmp(pwm_tool_func_strs_arr[i], opt_str) == 0 ) {
@@ -313,6 +319,9 @@ do_duty_cycle(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str)
     // Try setting the duty cycle.
     sscanf(val_str, "%" SCNu32 "", &duty);
     result = bbb_pwm_set_duty_cycle(pwm, duty);
+		if(result != BPRC_OK) {
+			fprintf(stderr, "Error setting pwm duty cycle.\n");
+		}
   } else {
     // Try getting the duty cycle.
     result = bbb_pwm_get_duty_cycle(pwm, &duty);
@@ -348,13 +357,16 @@ do_period(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str)
     // Try setting the period cycle.
     sscanf(val_str, "%" SCNu32 "", &period);
     result = bbb_pwm_set_period(pwm, period);
+		if(result != BPRC_OK) {
+			fprintf(stderr, "Error setting pwm period.\n");
+		}
   } else {
     // Try getting the period cycle.
     result = bbb_pwm_get_period(pwm, &period);
     if(result == BPRC_OK) {
       printf("%"PRIu32"\n", period);
     } else {
-      fprintf(stderr, "Error getting pwm period.");
+      fprintf(stderr, "Error getting pwm period.\n");
     }
   }
   return result;
@@ -383,13 +395,16 @@ do_polarity(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str)
     // Try setting the polarity cycle.
     sscanf(val_str, "%" SCNd8 "", &polarity);
     result = bbb_pwm_set_polarity(pwm, polarity);
+		if(result != BPRC_OK) {
+			fprintf(stderr, "Error setting pwm polarity.\n");	
+		}
   } else {
     // Try getting the polarity cycle.
     result = bbb_pwm_get_polarity(pwm, &polarity);
     if(result == BPRC_OK) {
       printf("%"PRId8"\n", polarity);
     } else {
-      fprintf(stderr, "Error getting pwm polarity.");
+      fprintf(stderr, "Error getting pwm polarity.\n");
     }
   }
   return result;
@@ -418,13 +433,16 @@ do_duty_percent(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str
     // Try setting the duty percent.
     sscanf(val_str, "%f", &duty);
     result = bbb_pwm_set_duty_percent(pwm, duty);
+		if(result != BPRC_OK) {
+			fprintf(stderr, "Error setting duty percent.\n");
+		}
   } else {
     // Try getting the duty percent.
     result = bbb_pwm_get_duty_percent(pwm, &duty);
     if(result == BPRC_OK) {
       printf("%f\n", duty);
     } else {
-      fprintf(stderr, "Error getting pwm duty percent.");
+      fprintf(stderr, "Error getting pwm duty percent.\n");
     }
   }
   return result;
@@ -444,13 +462,16 @@ do_frequency(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str)
     // Try setting the frequency.
     sscanf(val_str, "%"SCNu32, &frequency);
     result = bbb_pwm_set_frequency(pwm, frequency);
+		if(result != BPRC_OK) {
+			fprintf(stderr, "Error setting pwm frequency.\n");
+		}
   } else {
     // Try getting the frequency.
     result = bbb_pwm_get_frequency(pwm, &frequency);
     if(result == BPRC_OK) {
       printf("%"PRIu32"\n", frequency);
     } else {
-      fprintf(stderr, "Error getting pwm frequency.");
+      fprintf(stderr, "Error getting pwm frequency.\n");
     }
   }
   return result;
@@ -468,12 +489,12 @@ do_running(struct bbb_pwm_t *pwm, enum pwm_tool_gs_e get_set, char *val_str)
     if(atoi(val_str)) {
       result = bbb_pwm_start(pwm);
 			if(result != BPRC_OK) {
-				fprintf(stderr, "Failed to start pwm.\n");
+				fprintf(stderr, "Error starting pwm.\n");
 			}
     } else {
       result = bbb_pwm_stop(pwm);
 			if(result != BPRC_OK) {
-				fprintf(stderr, "Failed to stop pwm.\n");
+				fprintf(stderr, "Error stoping pwm.\n");
 			}
     }
   } else {
