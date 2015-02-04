@@ -216,17 +216,17 @@ do_pwms(int argc, char **argv)
   optsrt = optind;
   optend = argc;
 
-  if(optsrt - optend < 3 || optsrt - optend > 4) {
+  if(optend - optsrt < 3 || optend - optsrt > 4) {
     fprintf(stderr, "Error, invalid number of options.\n");
     result = -3;
     goto out;
   }
 
   pwm_name = argv[optsrt];
-  get_set_str = argv[optsrt];
-  opt_str = argv[optsrt];
-  if(optsrt - optend == 4) {
-    val_str = argv[optsrt];
+  get_set_str = argv[optsrt + 1];
+  opt_str = argv[optsrt + 2];
+  if(optend - optsrt == 4) {
+    val_str = argv[optsrt + 3];
   }
 
   pwm = bbb_pwm_controller_get_pwm(bpc, pwm_name);
@@ -267,15 +267,15 @@ do_pwm(struct bbb_pwm_t *pwm, char *get_set_str, char *opt_str, char *val_str)
   if(strcmp(get_set_str, "set") == 0) {
     get_set = BPT_SET;
     assert(val_str != NULL);
-  } else if(strcmp(get_set_str, "get") == 0) {
-    get_set = BPT_GET;
-    if(bbb_pwm_claim(pwm) != BPRC_OK) {
+ 
+   if(bbb_pwm_claim(pwm) != BPRC_OK) {
       fprintf(stderr, "Error could not claim pwm.\n");
       result = -3;
       goto out;
     }
-
-  } else {
+ } else if(strcmp(get_set_str, "get") == 0) {
+    get_set = BPT_GET;
+   } else {
     fprintf(stderr,
             "Error, must be get or set, %s is invalid.\n", get_set_str);
     result = -4;
