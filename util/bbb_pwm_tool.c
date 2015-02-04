@@ -267,15 +267,15 @@ do_pwm(struct bbb_pwm_t *pwm, char *get_set_str, char *opt_str, char *val_str)
   if(strcmp(get_set_str, "set") == 0) {
     get_set = BPT_SET;
     assert(val_str != NULL);
- 
-   if(bbb_pwm_claim(pwm) != BPRC_OK) {
+
+    if(bbb_pwm_claim(pwm) != BPRC_OK) {
       fprintf(stderr, "Error could not claim pwm.\n");
       result = -3;
       goto out;
     }
- } else if(strcmp(get_set_str, "get") == 0) {
+  } else if(strcmp(get_set_str, "get") == 0) {
     get_set = BPT_GET;
-   } else {
+  } else {
     fprintf(stderr,
             "Error, must be get or set, %s is invalid.\n", get_set_str);
     result = -4;
