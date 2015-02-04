@@ -10,8 +10,9 @@
 #ifndef BBB_PWM_H
 #define BBB_PWM_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 enum bbb_pwm_state_e
 {
