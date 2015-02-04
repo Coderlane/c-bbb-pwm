@@ -851,7 +851,9 @@ bbb_pwm_set_duty_percent(struct bbb_pwm_t *bp, float percent)
   }
   // We need to invert the percentage.
   // 0 Should be FULL STOP 100 should be FULL SPEED
-  duty_cycle = (uint32_t)(((float) period) * (percent / 100.0f));
+  duty_cycle = (uint32_t)(((float) period) * ((100.0f - percent) / 100.0f));
+
+  fprintf(stderr, "new cycle: %d\n", duty_cycle);
 
   return bbb_pwm_set_duty_cycle(bp, duty_cycle);
 }
