@@ -455,11 +455,11 @@ bbb_pwm_delete(struct bbb_pwm_t **bp_ptr)
     free(bp->bp_name);
   }
 
-	if(bp->bp_path != NULL) {
-		free(bp->bp_path);
-	}
+  if(bp->bp_path != NULL) {
+    free(bp->bp_path);
+  }
 
-	if(bp->bp_running_state_file_path != NULL) {
+  if(bp->bp_running_state_file_path != NULL) {
     free(bp->bp_running_state_file_path);
   }
 
@@ -477,6 +477,87 @@ bbb_pwm_delete(struct bbb_pwm_t **bp_ptr)
 
   free(bp);
   *bp_ptr = NULL;
+}
+
+/**
+ * @brief Claims a pwm for later setting values.
+ *
+ * @param bp The pwm to claim.
+ *
+ * @return A status code.
+ */
+int
+bbb_pwm_force_claim(struct bbb_pwm_t *bp)
+{
+  int result = BPRC_OK;
+
+  assert(bp != NULL);
+
+  if(bbb_pwm_is_claimed(bp)) {
+    // We already claimed it.
+    return BPRC_OK;
+  }
+
+  assert(bp->bp_running_state_file_path != NULL);
+  assert(bp->bp_duty_file_path != NULL);
+  assert(bp->bp_period_file_path != NULL);
+  assert(bp->bp_polarity_file_path != NULL);
+
+  // Open the necessary files.
+  bp->bp_running_state_file =
+    file_force_open(bp->bp_running_state_file_path, "r+");
+  if(bp->bp_running_state_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
+
+  bp->bp_duty_file = file_force_open(bp->bp_duty_file_path, "r+");
+  if(bp->bp_duty_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
+
+  bp->bp_period_file = file_force_open(bp->bp_period_file_path, "r+");
+  if(bp->bp_period_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
+
+  bp->bp_polarity_file = file_force_open(bp->bp_polarity_file_path, "r+");
+  if(bp->bp_polarity_file == NULL) {
+    result = BPRC_BUSY;
+    goto out;
+  }
+
+  // Load the cached values.
+  result = file_read_int8(bp->bp_running_state_file, &(bp->bp_running_state));
+  if(result != BPRC_OK) {
+    goto out;
+  }
+
+  result = file_read_uint32(bp->bp_duty_file, &(bp->bp_duty_cycle));
+  if(result != BPRC_OK) {
+    goto out;
+  }
+
+  result = file_read_uint32(bp->bp_period_file, &(bp->bp_period));
+  if(result != BPRC_OK) {
+    goto out;
+  }
+
+  result = file_read_int8(bp->bp_polarity_file, &(bp->bp_polarity));
+  if(result != BPRC_OK) {
+    goto out;
+  }
+
+out:
+  if(result != BPRC_OK) {
+    // On failure, unclaim will force a cleanup.
+    bbb_pwm_unclaim(bp);
+  } else {
+    bp->bp_state = BPS_CLAIMED;
+  }
+  return result;
 }
 
 /**
@@ -1180,6 +1261,27 @@ file_open_and_claim(const char *path, const char *mode)
   if(fcntl(fd, F_SETLK, &lock) < 0) {
     // Failed to lock the file.
     fclose(file);
+    return NULL;
+  }
+
+  return file;
+}
+
+/**
+ * @brief Open a file.
+ *
+ * @param path The path to the file we are opening.
+ *
+ * @return A FILE* if we could open the file, else NULL.
+ */
+FILE *
+file_force_open(const char *path, const char *mode)
+{
+  FILE *file;
+
+  file = fopen(path, mode);
+  if(file == NULL) {
+    // Failed to open the file!
     return NULL;
   }
 

@@ -144,6 +144,8 @@ int bbb_pwm_controller_probe(struct bbb_pwm_controller_t *bpc);
 struct bbb_pwm_t *bbb_pwm_new(const char *name, const char *root_path);
 void bbb_pwm_delete(struct bbb_pwm_t **bp_ptr);
 
+int bbb_pwm_force_claim(struct bbb_pwm_t *bp);
+
 int bbb_pwm_set_running_state(struct bbb_pwm_t *bp, int8_t running_state);
 int bbb_pwm_get_running_state(struct bbb_pwm_t *bp,
                               int8_t *out_running_state);
@@ -157,6 +159,7 @@ int file_write_int8(FILE *file, int8_t data);
 int file_can_write(FILE *file);
 int file_can_read(FILE *file);
 
+FILE *file_force_open(const char *path, const char *mode);
 FILE *file_open_and_claim(const char *path, const char *mode);
 void file_close_and_unclaim(FILE *file);
 
