@@ -22,8 +22,9 @@ set(LIBBBBPWM_VERSION
 	"${LIBBBBPWM_VERSION_MAJOR}.${LIBBBBPWM_VERSION_MINOR}.${LIBBBBPWM_VERSION_PATCH}")
 
 # CMake Install Directories
-set(CMAKE_INSTALL_LIBDIR lib)
-set(CMAKE_INSTALL_INCLUDEDIR include)
+set(CMAKE_INSTALL_LIBDIR "lib")
+set(CMAKE_ISNTALL_BINDIR "bin")
+set(CMAKE_INSTALL_INCLUDEDIR "include")
 
 # pkg-config directory
 if(WIN32 AND NOT CYGWIN)
@@ -44,7 +45,6 @@ add_subdirectory(${LIBBBBPWM_SRC})
 set(LIBBBBPWM_SOURCE_FILES ${SOURCE_FILES})
 
 # Headers
-add_subdirectory(${LIBBBBPWM_INCLUDEDIR})
 include_directories(${LIBBBBPWM_INCLUDEDIR})
 set(LIBBBBPWM_HEADER_FILES ${HEADER_FILES})
 
@@ -58,7 +58,7 @@ target_link_libraries(${LIBBBBPWM_LIBRARY} ${udev_LIBRARY})
 add_subdirectory(${LIBBBBPWM_TEST})
 
 # Utilities
-add_subdirectory(${LIBBBBPWM_UTIL})
+include_directories(${LIBBBBPWM_UTIL})
 
 # Config File Settings
 set(LIBBBBPWM_INSTALL_PREFIX      "${CMAKE_INSTALL_PREFIX}")
@@ -75,6 +75,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/libbbbpwm.pc.in
 # Set install targets
 install(TARGETS ${LIBBBBPWM_LIBRARY} 
 	DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS ${LIBBBBPWM_UTIL_TARGETS} 
+	DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES ${LIBBBBPWM_HEADER_FILES}
 	DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}")
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libbbbpwm.pc
