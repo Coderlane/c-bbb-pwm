@@ -201,7 +201,7 @@ test_set_get_duty_percent()
   expect_eq(bbb_pwm_get_duty_percent(bp, &percent), BPRC_OK);
   expect_eq(100.0f, percent);
   expect_eq(bbb_pwm_get_duty_cycle(bp, &duty), BPRC_OK);
-  expect_eq(100, duty);
+	expect_eq(0, duty);
 
   expect_eq(bbb_pwm_set_duty_percent(bp, 50.0f), BPRC_OK);
   expect_eq(bbb_pwm_get_duty_percent(bp, &percent), BPRC_OK);
@@ -213,7 +213,7 @@ test_set_get_duty_percent()
   expect_eq(bbb_pwm_get_duty_percent(bp, &percent), BPRC_OK);
   expect_eq(0.0f, percent);
   expect_eq(bbb_pwm_get_duty_cycle(bp, &duty), BPRC_OK);
-  expect_eq(0, duty);
+  expect_eq(100, duty);
 
 
   bbb_pwm_test_delete(&bp);

@@ -1192,7 +1192,7 @@ bbb_pwm_get_duty_percent(struct bbb_pwm_t *bp, float *out_percent)
     return result;
   }
 
-  *out_percent = ((float) duty / (float) period) * 100.0f;
+  *out_percent = ((1.0f - ((float) duty / (float) period)) * 100.0f);
   return BPRC_OK;
 }
 

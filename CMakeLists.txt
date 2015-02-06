@@ -73,8 +73,6 @@ set(LIBBBBPWM_INSTALL_INCLUDEDIR
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/libbbbpwm.pc.in
   ${CMAKE_CURRENT_BINARY_DIR}/libbbbpwm.pc @ONLY)
 
-message(${LIBBBBPWM_UTIL_TARGETS})
-
 # Set install targets
 install(TARGETS ${LIBBBBPWM_LIBRARY} 
 	DESTINATION ${CMAKE_INSTALL_LIBDIR})
